@@ -1,0 +1,17 @@
+compensation_engine\saga\Compensator.class
+compensation_engine\model\ApplicationAccess.class
+compensation_engine\saga\WorkflowPolicy.class
+compensation_engine\model\Account.class
+compensation_engine\saga\Saga.class
+compensation_engine\controller\AiController.class
+compensation_engine\tools\AccessManagementTools.class
+compensation_engine\saga\SagaStep.class
+compensation_engine\workflow\ProvisioningWorkflow.class
+compensation_engine\controller\CompensationController.class
+compensation_engine\workflow\OnboardingWorkflow.class
+compensation_engine\controller\WorkflowController.class
+compensation_engine\CompensationEngineApplication.class
+compensation_engine\workflow\RevocationWorkflow.class
+compensation_engine\model\Employee.class
+compensation_engine\ai\OllamaService.class
+compensation_engine\model\Resource.class
