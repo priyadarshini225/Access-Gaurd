@@ -1,12 +1,17 @@
 package compensation_engine.controller;
 
+import compensation_engine.dto.OffboardRequest;
+import compensation_engine.dto.OnboardRequest;
+import compensation_engine.dto.RevokeAccessRequest;
+import compensation_engine.model.WorkflowExecution;
 import compensation_engine.saga.SagaResult;
-import compensation_engine.tools.AccessManagementTools;
-import compensation_engine.workflow.OnboardingWorkflow;
-import compensation_engine.workflow.RevocationWorkflow;
+import compensation_engine.service.*;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,147 +19,67 @@ import java.util.Map;
 @CrossOrigin
 public class WorkflowController {
 
-    private final AccessManagementTools tools;
+    private final WorkflowService workflowService;
+    private final EmployeeService employeeService;
+    private final AccountService accountService;
+    private final AccessService accessService;
+    private final ResourceService resourceService;
+    private final EmailService emailService;
+    private final WorkflowExecutionService executionService;
 
-    public WorkflowController(AccessManagementTools tools) {
-        this.tools = tools;
+    public WorkflowController(WorkflowService workflowService,
+                              EmployeeService employeeService,
+                              AccountService accountService,
+                              AccessService accessService,
+                              ResourceService resourceService,
+                              EmailService emailService,
+                              WorkflowExecutionService executionService) {
+        this.workflowService = workflowService;
+        this.employeeService = employeeService;
+        this.accountService = accountService;
+        this.accessService = accessService;
+        this.resourceService = resourceService;
+        this.emailService = emailService;
+        this.executionService = executionService;
     }
 
     @PostMapping("/onboard")
-    public SagaResult onboard(@RequestBody Map<String, Object> req) {
-
-        String name = required(req, "name");
-        String employeeId = optional(req, "employeeId");
-
-        if (employeeId.isBlank()) {
-            employeeId = makeId(name);
-        }
-
-        String department = required(req, "department");
-        String role = required(req, "role");
-        String application = required(req, "application");
-        String accessLevel = required(req, "accessLevel");
-
-        String failAt = optional(req, "failAt");
-
-        return new OnboardingWorkflow(tools).run(
-                employeeId,
-                name,
-                department,
-                role,
-                application,
-                accessLevel,
-                failAt
-        );
+    public SagaResult onboard(@Valid @RequestBody OnboardRequest request) {
+        return workflowService.executeOnboarding(request);
     }
 
     @PostMapping("/offboard")
-    public SagaResult offboard(@RequestBody Map<String, Object> req) {
+    public SagaResult offboard(@RequestBody OffboardRequest request) {
+        return workflowService.executeOffboarding(request);
+    }
 
-        String name = optional(req, "name");
-        String employeeId = optional(req, "employeeId");
-        String application = required(req, "application");
-
-        /*
-         * For offboarding, either employeeId or name must be supplied.
-         */
-        if (employeeId.isBlank() && !name.isBlank()) {
-            employeeId = makeId(name);
-        }
-
-        if (employeeId.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Employee ID or employee name is required for offboarding."
-            );
-        }
-
-        String failAt = optional(req, "failAt");
-
-        return new RevocationWorkflow(tools).run(
-                employeeId,
-                application,
-                failAt
-        );
+    @PostMapping("/revoke-access")
+    public SagaResult revokeAccess(@RequestBody RevokeAccessRequest request) {
+        return workflowService.executeAccessRevocation(request);
     }
 
     @GetMapping("/state")
-    public Map<String, Object> state() {
-
+    public ResponseEntity<Map<String, Object>> state() {
         Map<String, Object> state = new LinkedHashMap<>();
+        state.put("employees", employeeService.findAll());
+        state.put("accounts", accountService.findAll());
+        state.put("applicationAccess", accessService.findAll());
+        state.put("resources", resourceService.findAll());
+        state.put("emails", emailService.findAllAsMap());
 
-        state.put("employees", tools.getEmployees());
-        state.put("accounts", tools.getAccounts());
-        state.put("applicationAccess", tools.getApplicationAccess());
-        state.put("resources", tools.getResources());
-        state.put("emails", tools.getEmails());
-
-        return state;
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(state);
     }
 
-    /**
-     * Required field.
-     *
-     * No default values are used.
-     */
-    private String required(
-            Map<String, Object> request,
-            String key) {
-
-        String value = optional(request, key);
-
-        if (value.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Required field missing: " + key
-            );
-        }
-
-        return value;
-    }
-
-    /**
-     * Optional field.
-     *
-     * Returns an empty string instead of inventing a value.
-     */
-    private String optional(
-            Map<String, Object> request,
-            String key) {
-
-        if (request == null) {
-            return "";
-        }
-
-        Object value = request.get(key);
-
-        if (value == null) {
-            return "";
-        }
-
-        return value.toString().trim();
-    }
-
-    /**
-     * Creates a deterministic employee ID only when
-     * the user did not explicitly provide one.
-     */
-    public static String makeId(String name) {
-
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Employee name is required."
-            );
-        }
-
-        String id = name
-                .toLowerCase()
-                .replaceAll("[^a-z0-9]", "");
-
-        if (id.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Could not create a valid employee ID from the employee name."
-            );
-        }
-
-        return id;
+    @GetMapping("/history")
+    public ResponseEntity<List<WorkflowExecution>> history() {
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
+                .body(executionService.getRecentExecutions());
     }
 }

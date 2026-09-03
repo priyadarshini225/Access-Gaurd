@@ -1,34 +1,35 @@
 package compensation_engine.ai;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import compensation_engine.dto.AiPlanResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class OllamaService {
 
+    private static final Logger log = LoggerFactory.getLogger(OllamaService.class);
+
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String OLLAMA_URL =
-            "http://localhost:11434/api/generate";
+    @Value("${ollama.url:http://localhost:11434/api/generate}")
+    private String ollamaUrl;
 
-    private static final String MODEL =
-            "qwen2.5:1.5b";
+    @Value("${ollama.model:qwen2.5:1.5b}")
+    private String model;
 
-    public Map<String, String> plan(String message) {
-
-        Map<String, String> result = new LinkedHashMap<>();
-
-        // Never execute a workflow when there is no actual user request.
+    public AiPlanResponse plan(String message) {
         if (message == null || message.trim().isEmpty()) {
-            return unknownResult(
-                    "No request was provided. Please enter an onboarding or offboarding request."
-            );
+            return unknownResult("No request was provided. Please enter an onboarding or offboarding request.");
         }
 
         String userMessage = message.trim();
@@ -84,216 +85,133 @@ public class OllamaService {
                 4. NEVER invent values.
                    If the user does not provide a value, return an empty string.
 
-                5. Do NOT use default values such as:
-                   Engineering
-                   Employee
-                   GitLab
-                   Developer
-
                 6. Extract values only when they are explicitly present in the user request.
 
-                7. employeeId is optional. Extract it only if explicitly provided.
+                7. employeeId: Extract only when a numeric ID (like 101, 102) is explicitly mentioned.
+                   NEVER place department names (like "Security", "Engineering") or person names into employeeId.
+                   If no explicit numeric ID is given, leave employeeId as "".
+
+                8. department: The department or team (e.g. "Engineering", "Security", "Finance", "DevOps", "HR").
 
                 User request:
                 """ + userMessage;
 
         Map<String, Object> request = new LinkedHashMap<>();
-        request.put("model", MODEL);
+        request.put("model", model);
         request.put("prompt", prompt);
         request.put("stream", false);
         request.put("format", "json");
 
         try {
+            log.info("Calling Ollama API at {} with model {}", ollamaUrl, model);
 
-            ResponseEntity<Map> response =
-                    restTemplate.postForEntity(
-                            OLLAMA_URL,
-                            request,
-                            Map.class
-                    );
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    ollamaUrl,
+                    request,
+                    Map.class
+            );
 
             if (response.getBody() == null) {
-                return unknownResult(
-                        "Ollama returned an empty response."
-                );
+                return unknownResult("Ollama returned an empty response.");
             }
 
-            Object rawResponse =
-                    response.getBody().get("response");
-
-            if (rawResponse == null ||
-                    rawResponse.toString().trim().isEmpty()) {
-
-                return unknownResult(
-                        "Ollama did not return a valid plan."
-                );
+            Object rawResponse = response.getBody().get("response");
+            if (rawResponse == null || rawResponse.toString().trim().isEmpty()) {
+                return unknownResult("Ollama did not return a valid response content.");
             }
 
-            result = parseJson(rawResponse.toString());
+            AiPlanResponse result = parseJson(rawResponse.toString());
 
-            /*
-             * Safety validation.
-             *
-             * Even if the LLM returns something unexpected,
-             * we do not allow the application to execute
-             * an unknown intent.
-             */
-            String intent =
-                    result.getOrDefault("intent", "UNKNOWN")
-                            .trim()
-                            .toUpperCase();
-
-            if (!intent.equals("ONBOARD") &&
-                    !intent.equals("OFFBOARD")) {
-
-                return unknownResult(
-                        "The request could not be understood as a valid onboarding or offboarding operation."
-                );
+            String intent = result.getIntent() != null ? result.getIntent().trim().toUpperCase() : "UNKNOWN";
+            if (!"ONBOARD".equals(intent) && !"OFFBOARD".equals(intent)) {
+                return unknownResult("The request could not be understood as a valid onboarding or offboarding operation.");
             }
 
-            result.put("intent", intent);
-
-            result.put("aiModel", MODEL);
-            result.put("aiStatus", "ONLINE");
-
+            result.setIntent(intent);
+            result.setAiModel(model);
+            result.setAiStatus("ONLINE");
             return result;
 
         } catch (Exception e) {
-
-            return unknownResult(
-                    "Ollama is not reachable. Please start Ollama and try again."
-            );
+            log.error("Failed to communicate with Ollama: {}", e.getMessage());
+            return unknownResult("Ollama is not reachable. Please start Ollama and try again. (" + e.getMessage() + ")");
         }
     }
 
-    /**
-     * Used by /api/ai/chat.
-     */
     public String ask(String message) {
+        AiPlanResponse plan = plan(message);
 
-        Map<String, String> plan = plan(message);
-
-        String intent =
-                plan.getOrDefault("intent", "UNKNOWN");
-
-        if ("UNKNOWN".equals(intent)) {
-            return plan.getOrDefault(
-                    "message",
-                    "I could not understand the request."
-            );
+        String intent = plan.getIntent();
+        if ("UNKNOWN".equals(intent) || !"ONLINE".equals(plan.getAiStatus())) {
+            return plan.getMessage() != null ? plan.getMessage() : "I could not understand the request.";
         }
 
         StringBuilder response = new StringBuilder();
-
-        response.append("Intent: ")
-                .append(intent)
-                .append("\n");
-
-        appendIfPresent(response, "Employee ID",
-                plan.get("employeeId"));
-
-        appendIfPresent(response, "Employee",
-                plan.get("name"));
-
-        appendIfPresent(response, "Department",
-                plan.get("department"));
-
-        appendIfPresent(response, "Role",
-                plan.get("role"));
-
-        appendIfPresent(response, "Application",
-                plan.get("application"));
-
-        appendIfPresent(response, "Access Level",
-                plan.get("accessLevel"));
+        response.append("Intent: ").append(intent).append("\n");
+        appendIfPresent(response, "Employee ID", plan.getEmployeeId());
+        appendIfPresent(response, "Employee", plan.getName());
+        appendIfPresent(response, "Department", plan.getDepartment());
+        appendIfPresent(response, "Role", plan.getRole());
+        appendIfPresent(response, "Application", plan.getApplication());
+        appendIfPresent(response, "Access Level", plan.getAccessLevel());
 
         return response.toString().trim();
     }
 
     /**
-     * Parse the flat JSON returned by Ollama.
-     *
-     * We intentionally keep this dependency-free.
+     * Robust JSON parsing using Jackson ObjectMapper.
      */
-    private Map<String, String> parseJson(String raw) {
-
-        Map<String, String> result =
-                new LinkedHashMap<>();
-
-        String json = raw
-                .trim()
-                .replace("```json", "")
-                .replace("```", "")
-                .trim();
-
-        String[] fields = {
-                "intent",
-                "name",
-                "employeeId",
-                "department",
-                "role",
-                "application",
-                "accessLevel"
-        };
-
-        for (String field : fields) {
-
-            String pattern =
-                    "\"" + Pattern.quote(field) +
-                    "\"\\s*:\\s*\"([^\"]*)\"";
-
-            Matcher matcher =
-                    Pattern.compile(pattern)
-                            .matcher(json);
-
-            if (matcher.find()) {
-                result.put(
-                        field,
-                        matcher.group(1).trim()
-                );
-            } else {
-                result.put(field, "");
+    public AiPlanResponse parseJson(String raw) {
+        try {
+            String json = raw.trim();
+            if (json.startsWith("```json")) {
+                json = json.substring(7);
             }
+            if (json.startsWith("```")) {
+                json = json.substring(3);
+            }
+            if (json.endsWith("```")) {
+                json = json.substring(0, json.length() - 3);
+            }
+            json = json.trim();
+
+            JsonNode root = objectMapper.readTree(json);
+            AiPlanResponse plan = new AiPlanResponse();
+
+            plan.setIntent(getText(root, "intent", "UNKNOWN"));
+            plan.setName(getText(root, "name", ""));
+            plan.setEmployeeId(getText(root, "employeeId", ""));
+            plan.setDepartment(getText(root, "department", ""));
+            plan.setRole(getText(root, "role", ""));
+            plan.setApplication(getText(root, "application", ""));
+            plan.setAccessLevel(getText(root, "accessLevel", ""));
+
+            return plan;
+        } catch (Exception ex) {
+            log.warn("Jackson JSON parsing failed on LLM output: '{}', error: {}", raw, ex.getMessage());
+            return unknownResult("Failed to parse AI response into structured plan: " + ex.getMessage());
         }
+    }
 
+    private String getText(JsonNode node, String fieldName, String defaultValue) {
+        if (node.has(fieldName) && !node.get(fieldName).isNull()) {
+            return node.get(fieldName).asText("").trim();
+        }
+        return defaultValue;
+    }
+
+    private AiPlanResponse unknownResult(String message) {
+        AiPlanResponse result = new AiPlanResponse();
+        result.setIntent("UNKNOWN");
+        result.setMessage(message);
+        result.setAiModel(model);
+        result.setAiStatus("OFFLINE");
         return result;
     }
 
-    /**
-     * Create a safe UNKNOWN response.
-     */
-    private Map<String, String> unknownResult(
-            String message) {
-
-        Map<String, String> result =
-                new LinkedHashMap<>();
-
-        result.put("intent", "UNKNOWN");
-        result.put("name", "");
-        result.put("employeeId", "");
-        result.put("department", "");
-        result.put("role", "");
-        result.put("application", "");
-        result.put("accessLevel", "");
-
-        result.put("message", message);
-        result.put("aiModel", MODEL);
-        result.put("aiStatus", "OFFLINE");
-
-        return result;
-    }
-
-    private void appendIfPresent(
-            StringBuilder builder,
-            String label,
-            String value) {
-
+    private void appendIfPresent(StringBuilder builder, String label, String value) {
         if (value != null && !value.isBlank()) {
-
-            builder.append(label)
-                    .append(": ")
-                    .append(value)
-                    .append("\n");
+            builder.append(label).append(": ").append(value).append("\n");
         }
     }
 }

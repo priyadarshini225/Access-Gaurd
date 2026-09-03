@@ -1,1716 +1,1575 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>AccessGuard - Intelligent Access Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessGuard | Intelligent Access Management & Saga Engine</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-surface: #111827;
+            --bg-elevated: #1a2234;
+            --bg-card: rgba(22, 30, 49, 0.75);
+            --bg-input: #0e1626;
+            
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(99, 102, 241, 0.4);
+            --border-glow: rgba(99, 102, 241, 0.25);
+            
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            
+            --cyan: #06b6d4;
+            --cyan-glow: rgba(6, 182, 212, 0.3);
+            
+            --emerald: #10b981;
+            --emerald-bg: rgba(16, 185, 129, 0.12);
+            --emerald-border: rgba(16, 185, 129, 0.3);
+            
+            --amber: #f59e0b;
+            --amber-bg: rgba(245, 158, 11, 0.12);
+            --amber-border: rgba(245, 158, 11, 0.3);
+            
+            --rose: #f43f5e;
+            --rose-bg: rgba(244, 63, 94, 0.12);
+            --rose-border: rgba(244, 63, 94, 0.3);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-faint: #64748b;
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-full: 9999px;
+            
+            --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            --shadow-glow: 0 0 25px -5px var(--primary-glow);
+        }
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f7fb;
-            color: #172033;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.06) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+            background-attachment: fixed;
         }
 
+        code, pre, .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ----------------------------------------------------
+           NAVIGATION & HEADER
+        ---------------------------------------------------- */
         header {
-            background: #172033;
-            color: white;
-            padding: 20px 40px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 18px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 28px;
+        .header-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        header p {
-            margin: 6px 0 0;
-            color: #b9c4d6;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
         }
 
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--cyan);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .system-pills {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+        }
+
+        .pill-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--emerald);
+            box-shadow: 0 0 8px var(--emerald);
+            animation: pulseDot 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* ----------------------------------------------------
+           MAIN LAYOUT
+        ---------------------------------------------------- */
         main {
-            max-width: 1250px;
-            margin: 25px auto;
-            padding: 0 20px;
+            max-width: 1440px;
+            margin: 30px auto 60px;
+            padding: 0 30px;
+            width: 100%;
+            flex: 1;
         }
 
-        .grid {
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1.45fr 1fr;
+            gap: 28px;
         }
 
-        .panel {
-            background: white;
-            border-radius: 12px;
-            padding: 22px;
+        /* ----------------------------------------------------
+           CARDS & PANELS
+        ---------------------------------------------------- */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
         }
 
-        .panel h2 {
-            margin-top: 0;
-            font-size: 20px;
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+
+        /* ----------------------------------------------------
+           AI PROMPT CONSOLE
+        ---------------------------------------------------- */
+        .prompt-container {
+            position: relative;
+            margin-bottom: 16px;
         }
 
         textarea {
             width: 100%;
-            min-height: 120px;
-            resize: vertical;
-            padding: 14px;
-            border: 1px solid #ccd4e0;
-            border-radius: 8px;
+            min-height: 110px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
             font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
             outline: none;
+            transition: all 0.25s ease;
         }
 
         textarea:focus {
-            border-color: #526dfe;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background: #111a2e;
         }
 
-        button {
-            border: none;
-            border-radius: 8px;
-            padding: 12px 18px;
-            font-size: 14px;
-            font-weight: bold;
+        .prompt-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            color: var(--text-muted);
             cursor: pointer;
-            margin-right: 8px;
-            margin-top: 12px;
+            transition: all 0.2s ease;
+            user-select: none;
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .chip:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+            color: #fff;
+            transform: translateY(-1px);
         }
 
-        .primary {
-            background: #526dfe;
-            color: white;
-        }
-
-        .secondary {
-            background: #e8edf5;
-            color: #172033;
-        }
-
-        .danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .success {
-            background: #198754;
-            color: white;
-        }
-
-        .ai-box {
-            background: #f1f5ff;
-            border-left: 4px solid #526dfe;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            white-space: pre-wrap;
-        }
-
-        .plan-box {
-            background: #fafbfe;
-            border: 1px solid #e0e5ee;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .step {
+        .btn-group {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid #edf0f5;
+            flex-wrap: wrap;
         }
 
-        .step:last-child {
-            border-bottom: none;
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
         }
 
-        .icon {
-            width: 32px;
-            height: 32px;
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #4338ca);
+            color: #fff;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #7073ff, var(--primary));
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--emerald), #059669);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: linear-gradient(135deg, #34d399, var(--emerald));
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ----------------------------------------------------
+           AI PLAN PREVIEW & DETAILS
+        ---------------------------------------------------- */
+        .plan-preview {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .plan-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .meta-box {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+        }
+
+        .meta-label {
+            font-size: 11px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* ----------------------------------------------------
+           SAGA TIMELINE & STEPS
+        ---------------------------------------------------- */
+        .saga-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .timeline-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .step-icon {
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 700;
+            font-size: 13px;
             flex-shrink: 0;
         }
 
-        .icon.pending {
-            background: #e9edf4;
-            color: #697386;
+        .step-icon.pending {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-faint);
+            border: 1px solid var(--border-subtle);
         }
 
-        .icon.success {
-            background: #d9f5e5;
-            color: #198754;
+        .step-icon.success {
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            border: 1px solid var(--emerald-border);
         }
 
-        .icon.failed {
-            background: #fde0e3;
-            color: #dc3545;
+        .step-icon.failed {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border: 1px solid var(--rose-border);
         }
 
-        .icon.partial {
-            background: #fff0c7;
-            color: #946200;
+        .step-icon.compensated {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
         }
 
-        .muted {
-            color: #697386;
-            font-size: 13px;
+        .step-content {
+            flex: 1;
         }
 
-        .result {
-            margin-top: 18px;
-            padding: 18px;
-            border-radius: 10px;
-            white-space: pre-wrap;
+        .step-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
         }
 
-        .r-success {
-            background: #e4f7eb;
-            border: 1px solid #a9dfbd;
-        }
-
-        .r-rollback {
-            background: #e8efff;
-            border: 1px solid #b6c8ff;
-        }
-
-        .r-partial {
-            background: #fff5d8;
-            border: 1px solid #efd58a;
-        }
-
-        .r-failed {
-            background: #fde8ea;
-            border: 1px solid #efb5bc;
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .tag.ok {
-            background: #d9f5e5;
-            color: #198754;
-        }
-
-        .tag.bad {
-            background: #fde0e3;
-            color: #dc3545;
-        }
-
-        .tag.warn {
-            background: #fff0c7;
-            color: #946200;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .stat {
-            background: #f7f9fc;
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        .stat strong {
-            display: block;
-            font-size: 25px;
-            margin-top: 5px;
-        }
-
-        .history {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .history div {
-            padding: 10px 0;
-            border-bottom: 1px solid #edf0f5;
-            font-size: 13px;
-        }
-
-        .details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .detail {
-            background: #f7f9fc;
-            padding: 12px;
-            border-radius: 8px;
-        }
-
-        .detail b {
-            display: block;
+        .step-desc {
             font-size: 12px;
-            color: #697386;
-            margin-bottom: 4px;
+            color: var(--text-muted);
         }
 
-        .flow {
+        .step-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success { background: var(--emerald-bg); color: var(--emerald); border: 1px solid var(--emerald-border); }
+        .badge-failed { background: var(--rose-bg); color: var(--rose); border: 1px solid var(--rose-border); }
+        .badge-compensated { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+        .badge-partial { background: rgba(6, 182, 212, 0.15); color: var(--cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+
+        /* ----------------------------------------------------
+           EXECUTION RESULT BANNER
+        ---------------------------------------------------- */
+        .result-banner {
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result-banner.success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.1));
+            border: 1px solid var(--emerald-border);
+        }
+
+        .result-banner.rollback {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(245, 158, 11, 0.1));
+            border: 1px solid var(--rose-border);
+        }
+
+        .result-banner.partial {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(99, 102, 241, 0.1));
+            border: 1px solid var(--amber-border);
+        }
+
+        .banner-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .banner-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .banner-message {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ----------------------------------------------------
+           DATABASE INSPECTOR TABS
+        ---------------------------------------------------- */
+        .tabs-header {
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn.active {
+            color: var(--cyan);
+            background: rgba(6, 182, 212, 0.12);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            max-height: 380px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-faint);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-size: 11px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
+        }
+
+        .empty-state {
             text-align: center;
-            line-height: 2;
+            padding: 40px 20px;
+            color: var(--text-faint);
             font-size: 14px;
         }
 
-        @media (max-width: 850px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
+        /* ----------------------------------------------------
+           SIMULATOR / PLAYGROUND PANEL
+        ---------------------------------------------------- */
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
 
-            .details {
+        .sim-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sim-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        select, input[type="text"] {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* ----------------------------------------------------
+           RESPONSIVENESS
+        ---------------------------------------------------- */
+        @media (max-width: 1100px) {
+            .dashboard-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 16px 20px; }
+            main { padding: 0 16px; margin: 20px auto; }
+            .header-container { flex-direction: column; gap: 14px; align-items: flex-start; }
+            .system-pills { flex-wrap: wrap; }
         }
     </style>
 </head>
-
 <body>
 
-<header>
-    <h1>🛡 AccessGuard</h1>
-    <p>Agentic Employee Access Management & Intelligent Compensation Engine</p>
-</header>
-
-<main>
-
-    <div class="grid">
-
-        <!-- =====================================================
-             MAIN AREA
-        ====================================================== -->
-
-        <section>
-
-            <div class="panel">
-
-                <h2>🤖 Access Request</h2>
-
-                <p class="muted">
-                    Describe what you want AccessGuard to do.
-                    Ollama will understand the request first.
-                    No workflow is executed during analysis.
-                </p>
-
-                <textarea
-                    id="message"
-                    placeholder="Example:
-Onboard Kavya from Engineering as Developer and give GitLab Developer access.
-
-Or:
-Offboard Kavya and remove her GitLab access."
-                ></textarea>
-
+    <!-- ============================================================
+         NAVBAR / HEADER
+    ============================================================ -->
+    <header>
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-logo">🛡️</div>
                 <div>
-                    <button
-                        id="analyze"
-                        class="primary"
-                        onclick="prepare()"
-                    >
-                        🤖 Analyze Request
-                    </button>
-
-                    <button
-                        id="execute"
-                        class="success"
-                        onclick="executeWorkflow()"
-                        disabled
-                    >
-                        ▶ Execute Workflow
-                    </button>
-
-                    <button
-                        class="secondary"
-                        onclick="resetAll()"
-                    >
-                        ↻ Reset
-                    </button>
+                    <div class="brand-title">AccessGuard</div>
+                    <div class="brand-subtitle">Enterprise Saga & Compensation Engine</div>
                 </div>
-
-                <div
-                    id="ai"
-                    class="ai-box"
-                    style="display:none"
-                ></div>
-
             </div>
 
-
-            <!-- =================================================
-                 AI PLAN
-            ================================================== -->
-
-            <div
-                id="plan"
-                class="panel"
-                style="display:none"
-            >
-
-                <h2>📋 AI Plan</h2>
-
-                <div
-                    id="requestDetails"
-                    class="details"
-                ></div>
-
-                <div
-                    id="steps"
-                    class="plan-box"
-                ></div>
-
-                <p class="muted">
-                    ⚠️ Review the plan before executing.
-                    The workflow will not start automatically.
-                </p>
-
+            <div class="system-pills">
+                <div class="pill">
+                    <div class="pill-dot"></div>
+                    <span>Engine: <b>Spring Boot 3.4.5</b></span>
+                </div>
+                <div class="pill">
+                    <div class="pill-dot" style="background:var(--cyan); box-shadow:0 0 8px var(--cyan);"></div>
+                    <span>AI: <b>Qwen2.5 1.5B</b></span>
+                </div>
+                <div class="pill">
+                    <div class="pill-dot" style="background:#818cf8; box-shadow:0 0 8px #818cf8;"></div>
+                    <span>Database: <b>H2 File Mode</b></span>
+                </div>
             </div>
-
-
-            <!-- =================================================
-                 EXECUTION RESULT
-            ================================================== -->
-
-            <div
-                id="result"
-                class="panel"
-                style="display:none"
-            >
-
-                <h2>⚙️ Execution Result</h2>
-
-                <div id="resultContent"></div>
-
-            </div>
-
-        </section>
-
-
-        <!-- =====================================================
-             SIDEBAR
-        ====================================================== -->
-
-        <aside>
-
-            <div class="panel">
-
-                <h2>📊 System Statistics</h2>
-
-                <div class="stats">
-
-                    <div class="stat">
-                        <span class="muted">
-                            Employees
-                        </span>
-
-                        <strong id="employeeCount">
-                            0
-                        </strong>
-                    </div>
-
-                    <div class="stat">
-                        <span class="muted">
-                            Workflows
-                        </span>
-
-                        <strong id="workflowCount">
-                            0
-                        </strong>
-                    </div>
-
-                    <div class="stat">
-                        <span class="muted">
-                            Compensation
-                        </span>
-
-                        <strong id="compensationCount">
-                            0
-                        </strong>
-                    </div>
-
-                    <div class="stat">
-                        <span class="muted">
-                            Partial
-                        </span>
-
-                        <strong id="partialCount">
-                            0
-                        </strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="panel">
-
-                <h2>🔐 Safety Model</h2>
-
-                <div class="step">
-                    <div class="icon success">✓</div>
-
-                    <div>
-                        <b>Local AI</b><br>
-                        <span class="muted">
-                            Qwen2.5 1.5B via Ollama
-                        </span>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="icon success">✓</div>
-
-                    <div>
-                        <b>Deterministic Workflow</b><br>
-                        <span class="muted">
-                            Java Spring Boot
-                        </span>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="icon success">✓</div>
-
-                    <div>
-                        <b>Saga Engine</b><br>
-                        <span class="muted">
-                            Per-step compensation
-                        </span>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="icon partial">!</div>
-
-                    <div>
-                        <b>Offboarding Safety</b><br>
-                        <span class="muted">
-                            Partial completion preserved
-                        </span>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <div class="icon pending">👤</div>
-
-                    <div>
-                        <b>Human Intervention</b><br>
-                        <span class="muted">
-                            Required when safe rollback is impossible
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="panel">
-
-                <h2>📋 Execution History</h2>
-
-                <div
-                    id="history"
-                    class="history"
-                >
-                    <div>
-                        System ready
-                        <span class="tag ok">
-                            READY
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="panel">
-
-                <h2>🔄 Flow</h2>
-
-                <div class="flow">
-
-                    👤 Administrator
-                    <br>↓<br>
-
-                    🤖 Ollama
-                    <br>↓<br>
-
-                    📋 AI Plan
-                    <br>↓<br>
-
-                    ⚙️ Workflow
-                    <br>↓<br>
-
-                    🔄 Saga Engine
-                    <br>↓<br>
-
-                    🛡 Safety Policy
-                    <br>↓<br>
-
-                    ✅ Success
-                    /
-                    🔄 Rollback
-                    /
-                    ⚠️ Partial
-
-                </div>
-
-            </div>
-
-        </aside>
-
-    </div>
-
-</main>
-
-
-<script>
-
-    /*
-     * =========================================================
-     * APPLICATION STATE
-     * =========================================================
-     */
-
-    let plan = null;
-
-    let stats = {
-        workflows: 0,
-        compensation: 0,
-        partial: 0
-    };
-
-
-    /*
-     * =========================================================
-     * WORKFLOW STEP DEFINITIONS
-     * =========================================================
-     */
-
-    const onboardingSteps = [
-        "Create Employee",
-        "Create Account",
-        "Create Email",
-        "Grant Application Access",
-        "Create Storage"
-    ];
-
-    const offboardingSteps = [
-        "Remove Application Access",
-        "Disable Account",
-        "Revoke Resources",
-        "Deactivate Employee"
-    ];
-
-
-    /*
-     * =========================================================
-     * ANALYZE REQUEST
-     * =========================================================
-     *
-     * IMPORTANT:
-     *
-     * This function ONLY calls Ollama.
-     *
-     * It DOES NOT execute onboarding/offboarding.
-     */
-
-    async function prepare() {
-
-        const messageElement =
-            document.getElementById("message");
-
-        const message =
-            messageElement.value.trim();
-
-        if (!message) {
-
-            alert(
-                "Enter an employee access request first."
-            );
-
-            return;
-        }
-
-        const ai =
-            document.getElementById("ai");
-
-        const analyzeButton =
-            document.getElementById("analyze");
-
-        const executeButton =
-            document.getElementById("execute");
-
-        const planElement =
-            document.getElementById("plan");
-
-        const resultElement =
-            document.getElementById("result");
-
-        ai.style.display = "block";
-
-        ai.textContent =
-            "🤖 Ollama is understanding the request...";
-
-        analyzeButton.disabled = true;
-
-        executeButton.disabled = true;
-
-        planElement.style.display = "none";
-
-        resultElement.style.display = "none";
-
-        plan = null;
-
-        try {
-
-            const response =
-                await fetch(
-                    "/api/ai/plan",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-                            message: message
-                        })
-                    }
-                );
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "AI server returned HTTP " +
-                    response.status
-                );
-            }
-
-            const data =
-                await response.json();
-
-            /*
-             * Ollama must be online.
-             */
-
-            if (
-                data.aiStatus !== "ONLINE"
-            ) {
-
-                ai.className =
-                    "ai-box";
-
-                ai.textContent =
-                    "❌ Ollama is not available.\n\n" +
-                    "Start Ollama and make sure the " +
-                    "Qwen2.5 model is available.";
-
-                return;
-            }
-
-            /*
-             * AI must understand the request.
-             */
-
-            if (
-                !data.intent ||
-                (
-                    data.intent !== "ONBOARD" &&
-                    data.intent !== "OFFBOARD"
-                )
-            ) {
-
-                ai.className =
-                    "ai-box";
-
-                ai.textContent =
-                    "⚠️ I could not identify this as a valid " +
-                    "ONBOARD or OFFBOARD request.\n\n" +
-                    "Please provide a clearer employee access request.";
-
-                return;
-            }
-
-            /*
-             * Validate fields before creating a plan.
-             */
-
-            if (
-                !data.name ||
-                !data.application
-            ) {
-
-                ai.className =
-                    "ai-box";
-
-                ai.textContent =
-                    "⚠️ The AI plan is incomplete.\n\n" +
-                    "Employee name and application are required.";
-
-                return;
-            }
-
-            /*
-             * ONBOARD requires additional information.
-             */
-
-            if (
-                data.intent === "ONBOARD" &&
-                (
-                    !data.department ||
-                    !data.role ||
-                    !data.accessLevel
-                )
-            ) {
-
-                ai.className =
-                    "ai-box";
-
-                ai.textContent =
-                    "⚠️ The onboarding plan is incomplete.\n\n" +
-                    "Department, role and access level are required.";
-
-                return;
-            }
-
-            /*
-             * Store validated AI plan.
-             */
-
-            plan = data;
-
-            ai.className =
-                "ai-box";
-
-            ai.textContent =
-                "✅ Request understood by Ollama.\n\n" +
-                "Intent: " + data.intent +
-                "\nEmployee: " + data.name +
-                "\nApplication: " + data.application +
-                "\n\nThe workflow has NOT been executed yet.";
-
-            showPlan(data);
-
-            /*
-             * Only now can the user execute.
-             */
-
-            executeButton.disabled = false;
-
-        } catch (error) {
-
-            console.error(error);
-
-            plan = null;
-
-            ai.className =
-                "ai-box";
-
-            ai.textContent =
-                "❌ Could not communicate with the backend.\n\n" +
-                error.message;
-
-        } finally {
-
-            analyzeButton.disabled = false;
-        }
-    }
-
-
-    /*
-     * =========================================================
-     * DISPLAY AI PLAN
-     * =========================================================
-     */
-
-    function showPlan(data) {
-
-        const planElement =
-            document.getElementById("plan");
-
-        const details =
-            document.getElementById("requestDetails");
-
-        const stepsElement =
-            document.getElementById("steps");
-
-        planElement.style.display =
-            "block";
-
-        /*
-         * Request details
-         */
-
-        let html = "";
-
-        html += detail(
-            "Intent",
-            data.intent
-        );
-
-        html += detail(
-            "Employee",
-            data.name
-        );
-
-        if (data.department) {
-
-            html += detail(
-                "Department",
-                data.department
-            );
-        }
-
-        if (data.role) {
-
-            html += detail(
-                "Role",
-                data.role
-            );
-        }
-
-        html += detail(
-            "Application",
-            data.application
-        );
-
-        if (data.accessLevel) {
-
-            html += detail(
-                "Access Level",
-                data.accessLevel
-            );
-        }
-
-        details.innerHTML = html;
-
-
-        /*
-         * Workflow steps
-         */
-
-        const steps =
-            data.intent === "ONBOARD"
-                ? onboardingSteps
-                : offboardingSteps;
-
-        stepsElement.innerHTML = "";
-
-        steps.forEach(
-            function(step, index) {
-
-                const div =
-                    document.createElement("div");
-
-                div.className =
-                    "step";
-
-                div.innerHTML =
-                    `
-                    <div class="icon pending">
-                        ${index + 1}
-                    </div>
-
-                    <div>
-                        <b>${escapeHtml(step)}</b>
-                        <br>
-                        <span class="muted">
-                            Waiting for execution
-                        </span>
-                    </div>
-                    `;
-
-                stepsElement.appendChild(div);
-            }
-        );
-    }
-
-
-    /*
-     * =========================================================
-     * EXECUTE WORKFLOW
-     * =========================================================
-     *
-     * This is the ONLY function that executes the Java
-     * workflow.
-     */
-
-    async function executeWorkflow() {
-
-        /*
-         * Safety check:
-         *
-         * Never execute without a valid AI plan.
-         */
-
-        if (!plan) {
-
-            alert(
-                "Analyze the request first."
-            );
-
-            return;
-        }
-
-        if (
-            plan.intent !== "ONBOARD" &&
-            plan.intent !== "OFFBOARD"
-        ) {
-
-            alert(
-                "Invalid workflow intent."
-            );
-
-            return;
-        }
-
-        const executeButton =
-            document.getElementById("execute");
-
-        const analyzeButton =
-            document.getElementById("analyze");
-
-        executeButton.disabled = true;
-
-        analyzeButton.disabled = true;
-
-        /*
-         * Build request ONLY from AI plan.
-         */
-
-        let request = {
-
-            name: plan.name,
-
-            employeeId:
-                plan.employeeId || "",
-
-            application:
-                plan.application,
-
-            failAt:
-                plan.failAt || ""
-        };
-
-
-        if (plan.intent === "ONBOARD") {
-
-            request.department =
-                plan.department;
-
-            request.role =
-                plan.role;
-
-            request.accessLevel =
-                plan.accessLevel;
-        }
-
-
-        try {
-
-            const endpoint =
-                plan.intent === "ONBOARD"
-                    ? "/api/workflow/onboard"
-                    : "/api/workflow/offboard";
-
-
-            const response =
-                await fetch(
-                    endpoint,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify(request)
-                    }
-                );
-
-
-            /*
-             * HTTP-level failure.
-             */
-
-            if (!response.ok) {
-
-                let errorText =
-                    await response.text();
-
-                throw new Error(
-                    errorText ||
-                    "Workflow returned HTTP " +
-                    response.status
-                );
-            }
-
-
-            const data =
-                await response.json();
-
-
-            stats.workflows++;
-
-
-            /*
-             * Display actual Saga result.
-             */
-
-            displayResult(
-                data,
-                plan.intent
-            );
-
-
-            /*
-             * Update history.
-             */
-
-            addHistory(
-                plan.intent +
-                " workflow completed: " +
-                data.status,
-                data.status === "SUCCESS"
-                    ? "SUCCESS"
-                    : "FAILED"
-            );
-
-
-            /*
-             * Update statistics.
-             */
-
-            if (
-                data.status === "ROLLED_BACK" ||
-                data.status ===
-                    "PARTIAL_COMPENSATION"
-            ) {
-
-                stats.compensation++;
-            }
-
-            if (
-                data.status === "PARTIAL"
-            ) {
-
-                stats.partial++;
-            }
-
-            updateStats();
-
-            await loadState();
-
-        } catch (error) {
-
-            console.error(error);
-
-            displayError(
-                error.message
-            );
-
-            addHistory(
-                "Workflow request failed",
-                "FAILED"
-            );
-
-        } finally {
-
-            executeButton.disabled = false;
-
-            analyzeButton.disabled = false;
-        }
-    }
-
-
-    /*
-     * =========================================================
-     * DISPLAY SAGA RESULT
-     * =========================================================
-     */
-
-    function displayResult(
-        data,
-        intent
-    ) {
-
-        const result =
-            document.getElementById("result");
-
-        const content =
-            document.getElementById("resultContent");
-
-        result.style.display =
-            "block";
-
-
-        let resultClass =
-            "result r-success";
-
-
-        if (
-            data.status === "ROLLED_BACK"
-        ) {
-
-            resultClass =
-                "result r-rollback";
-        }
-
-        else if (
-            data.status === "PARTIAL"
-        ) {
-
-            resultClass =
-                "result r-partial";
-        }
-
-        else if (
-            data.status === "PARTIAL_COMPENSATION" ||
-            data.status === "FAILED"
-        ) {
-
-            resultClass =
-                "result r-failed";
-        }
-
-
-        let html =
-            `
-            <div class="${resultClass}">
-                <h3>
-                    ${statusIcon(data.status)}
-                    ${escapeHtml(data.status || "UNKNOWN")}
-                </h3>
-
-                <p>
-                    ${escapeHtml(
-                        data.message || ""
-                    )}
-                </p>
-
-                ${
-                    data.failedStep
-                        ? `
-                        <p>
-                            <b>Failed Step:</b>
-                            ${escapeHtml(
-                                data.failedStep
-                            )}
-                        </p>
-                        `
-                        : ""
-                }
-
-                ${
-                    data.residual
-                        ? `
-                        <p>
-                            <b>Residual State:</b>
-                            ${escapeHtml(
-                                data.residual
-                            )}
-                        </p>
-                        `
-                        : ""
-                }
-            </div>
-            `;
-
-
-        /*
-         * Actual execution steps
-         */
-
-        html +=
-            `
-            <div class="plan-box">
-                <h3>Workflow Steps</h3>
-            `;
-
-
-        if (
-            Array.isArray(data.steps) &&
-            data.steps.length > 0
-        ) {
-
-            data.steps.forEach(
-                function(step) {
-
-                    const success =
-                        step.status === "SUCCESS";
-
-                    html +=
-                        `
-                        <div class="step">
-
-                            <div class="icon ${
-                                success
-                                    ? "success"
-                                    : "failed"
-                            }">
-                                ${
-                                    success
-                                        ? "✓"
-                                        : "!"
-                                }
-                            </div>
-
-                            <div>
-                                <b>
-                                    ${escapeHtml(
-                                        step.name
-                                    )}
-                                </b>
-
-                                <br>
-
-                                <span class="muted">
-                                    ${escapeHtml(
-                                        step.status
-                                    )}
-                                </span>
-                            </div>
-
+        </div>
+    </header>
+
+    <!-- ============================================================
+         MAIN DASHBOARD
+    ============================================================ -->
+    <main>
+        <div class="dashboard-grid">
+
+            <!-- LEFT COLUMN: AI CONSOLE & SAGA ORCHESTRATOR -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+
+                <!-- AI INTENT CONSOLE -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🤖</span> Intelligent Access Request
                         </div>
-                        `;
-                }
-            );
+                        <span class="pill" style="font-size: 11px;">Deterministic Parser</span>
+                    </div>
 
-        } else {
-
-            html +=
-                `
-                <p class="muted">
-                    No step information returned.
-                </p>
-                `;
-        }
-
-
-        html += "</div>";
-
-
-        /*
-         * Compensation steps
-         */
-
-        if (
-            Array.isArray(data.compensation) &&
-            data.compensation.length > 0
-        ) {
-
-            html +=
-                `
-                <div class="plan-box">
-
-                    <h3>
-                        🔄 Compensation
-                    </h3>
-                `;
-
-            data.compensation.forEach(
-                function(item) {
-
-                    const success =
-                        item.status === "SUCCESS";
-
-                    html +=
-                        `
-                        <div class="step">
-
-                            <div class="icon ${
-                                success
-                                    ? "success"
-                                    : "failed"
-                            }">
-                                ${
-                                    success
-                                        ? "✓"
-                                        : "!"
-                                }
-                            </div>
-
-                            <div>
-
-                                <b>
-                                    ${escapeHtml(
-                                        item.name
-                                    )}
-                                </b>
-
-                                <br>
-
-                                <span class="muted">
-                                    ${escapeHtml(
-                                        item.status
-                                    )}
-                                </span>
-
-                            </div>
-
-                        </div>
-                        `;
-                }
-            );
-
-            html += "</div>";
-        }
-
-
-        /*
-         * Special explanation for offboarding partial state.
-         */
-
-        if (
-            intent === "OFFBOARD" &&
-            data.status === "PARTIAL"
-        ) {
-
-            html +=
-                `
-                <div class="result r-partial">
-
-                    <b>
-                        👤 Human intervention required
-                    </b>
-
-                    <p>
-                        Previously completed revocation
-                        steps are preserved.
-                        Access is not automatically restored.
+                    <p class="card-desc">
+                        Describe access operations in natural language. Ollama extracts intents safely without executing arbitrary database calls or bypassing Saga validations.
                     </p>
 
+                    <div class="prompt-chips">
+                        <div class="chip" onclick="setPrompt('Onboard Kavya Sharma from Engineering as Lead Architect and give GitLab Maintainer access')">
+                            + Onboard Kavya (GitLab Maintainer)
+                        </div>
+                        <div class="chip" onclick="setPrompt('Onboard Alex Chen from Security as DevOps Engineer and grant AWS Admin access')">
+                            + Onboard Alex (AWS Admin)
+                        </div>
+                        <div class="chip" onclick="setPrompt('Revoke GitLab access from Kavya Sharma')">
+                            + Revoke App Access
+                        </div>
+                        <div class="chip" onclick="setPrompt('Offboard Kavya Sharma and deactivate account')">
+                            + Full Offboard Kavya
+                        </div>
+                    </div>
+
+                    <div class="prompt-container">
+                        <textarea id="aiMessage" placeholder="E.g. Onboard Alice Smith from Engineering as Senior Developer and assign Jira Admin access..."></textarea>
+                    </div>
+
+                    <div class="btn-group">
+                        <button id="btnAnalyze" class="btn-primary" onclick="analyzeIntent()">
+                            <span>🔍</span> Analyze Intent
+                        </button>
+                        <button id="btnExecutePlan" class="btn-success" onclick="executeCurrentPlan()" disabled>
+                            <span>⚡</span> Execute Saga Workflow
+                        </button>
+                        <button class="btn-secondary" onclick="resetConsole()">
+                            <span>↻</span> Clear
+                        </button>
+                    </div>
+
+                    <!-- AI PLAN PREVIEW -->
+                    <div id="aiPlanBox" class="plan-preview" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div style="font-size: 14px; font-weight: 700; color: var(--cyan); display: flex; align-items: center; gap: 6px;">
+                                <span>📋</span> Parsed Intent Plan
+                            </div>
+                            <span id="planIntentBadge" class="step-badge badge-partial">ONBOARD</span>
+                        </div>
+
+                        <div class="plan-meta-grid">
+                            <div class="meta-box">
+                                <div class="meta-label">Target Name</div>
+                                <div id="metaName" class="meta-value">-</div>
+                            </div>
+                            <div class="meta-box">
+                                <div class="meta-label">Department</div>
+                                <div id="metaDept" class="meta-value">-</div>
+                            </div>
+                            <div class="meta-box">
+                                <div class="meta-label">Role</div>
+                                <div id="metaRole" class="meta-value">-</div>
+                            </div>
+                            <div class="meta-box">
+                                <div class="meta-label">Application</div>
+                                <div id="metaApp" class="meta-value">-</div>
+                            </div>
+                            <div class="meta-box">
+                                <div class="meta-label">Access Level</div>
+                                <div id="metaLevel" class="meta-value">-</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px;">
+                            Projected Saga Steps:
+                        </div>
+                        <div id="projectedStepsList" class="saga-timeline"></div>
+                    </div>
                 </div>
-                `;
-        }
 
+                <!-- SAGA EXECUTION RESULTS -->
+                <div id="executionResultCard" class="card" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>⚙️</span> Saga Transaction Tracer
+                        </div>
+                        <span id="execStatusBadge" class="step-badge badge-success">SUCCESS</span>
+                    </div>
 
-        content.innerHTML =
-            html;
-    }
+                    <div id="resultBanner" class="result-banner success">
+                        <div class="banner-header">
+                            <div id="bannerTitle" class="banner-title">
+                                <span>✅</span> Transaction Completed
+                            </div>
+                            <span id="bannerDuration" class="mono" style="font-size: 12px; color: var(--text-faint);">45ms</span>
+                        </div>
+                        <div id="bannerMessage" class="banner-message">All steps completed successfully.</div>
+                    </div>
 
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Step Execution Timeline:</div>
+                        <div id="executedStepsTimeline" class="saga-timeline"></div>
+                    </div>
 
-    /*
-     * =========================================================
-     * ERROR DISPLAY
-     * =========================================================
-     */
-
-    function displayError(
-        message
-    ) {
-
-        const result =
-            document.getElementById("result");
-
-        const content =
-            document.getElementById("resultContent");
-
-        result.style.display =
-            "block";
-
-        content.innerHTML =
-            `
-            <div class="result r-failed">
-
-                <h3>
-                    ❌ Workflow Error
-                </h3>
-
-                <p>
-                    ${escapeHtml(
-                        message || "Unknown error"
-                    )}
-                </p>
+                    <div id="compensationSection" style="margin-top: 20px; display: none;">
+                        <div style="font-size: 14px; font-weight: 700; color: var(--amber); margin-bottom: 12px;">
+                            🔄 Reverse-Order Compensation Audit:
+                        </div>
+                        <div id="compensationTimeline" class="saga-timeline"></div>
+                    </div>
+                </div>
 
             </div>
-            `;
-    }
 
+            <!-- RIGHT COLUMN: STATE EXPLORER & SIMULATOR -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
 
-    /*
-     * =========================================================
-     * STATE
-     * =========================================================
-     */
+                <!-- LIVE PERSISTENT DATABASE INSPECTOR -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>💾</span> Persistent Store
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="loadState()">
+                                <span>↻</span> Refresh
+                            </button>
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; border-color: rgba(244,63,94,0.4); color: var(--rose);" onclick="resetEntireDatabase()">
+                                <span>🗑️</span> Reset DB
+                            </button>
+                        </div>
+                    </div>
 
-    async function loadState() {
+                    <div class="tabs-header">
+                        <div class="tab-btn active" onclick="switchTab('employees')">Employees (<span id="countEmp">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('emails')">Emails (<span id="countEmail">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('accounts')">Accounts (<span id="countAcc">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('access')">App Access (<span id="countAccess">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('resources')">Resources (<span id="countRes">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('history')">History</div>
+                    </div>
 
-        try {
+                    <div class="data-table-container">
+                        <table id="stateTable">
+                            <thead id="stateTableHeader"></thead>
+                            <tbody id="stateTableBody"></tbody>
+                        </table>
+                        <div id="tableEmptyState" class="empty-state" style="display: none;">
+                            No records found in database.
+                        </div>
+                    </div>
+                </div>
 
-            const response =
-                await fetch(
-                    "/api/workflow/state"
-                );
+                                   <!-- SAGA FAILURE & ROLLBACK SIMULATOR (Onboarding only) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🧪</span> Onboarding Rollback Simulator
+                        </div>
+                    </div>
 
-            if (!response.ok) {
+                    <p class="card-desc">
+                        Inject a crash at any onboarding step to test the <b>ROLLBACK_ON_FAILURE</b> policy. All completed steps are automatically reversed.
+                    </p>
+
+                    <div class="simulator-grid">
+                        <div class="sim-input-group" style="grid-column: span 2;">
+                            <label class="sim-label">Employee Name</label>
+                            <input type="text" id="simName" value="Samantha Reed">
+                        </div>
+                        <div class="sim-input-group">
+                            <label class="sim-label">Application</label>
+                            <input type="text" id="simApp" value="GitLab">
+                        </div>
+                        <div class="sim-input-group">
+                            <label class="sim-label">Fail at Step</label>
+                            <select id="simFailAt">
+                                <option value="Create Account">Create Account</option>
+                                <option value="Create Email">Create Email</option>
+                                <option value="Grant Application Access">Grant Application Access</option>
+                                <option value="Create Storage">Create Storage</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px;">
+                        <button id="btnSimTrigger" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #b45309);" onclick="runSimulatedFailure()">
+                            <span>&#x1F4A5;</span> Trigger Onboarding Failure &amp; Verify Rollback
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ADMIN: REAL DATA SABOTAGE PANEL -->
+                <div class="card" style="border-color: rgba(244,63,94,0.4);">
+                    <div class="card-header">
+                        <div class="card-title" style="color: var(--rose);">
+                            <span>&#x1F5D1;</span> Admin: Delete a Record (Real Failure)
+                        </div>
+                        <span class="pill" style="font-size:11px; color:var(--rose);">Data Inconsistency Demo</span>
+                    </div>
+
+                    <p class="card-desc">
+                        Physically delete one record for a real employee. Then run <b>Offboard</b> — the workflow will <b>genuinely fail</b> at that step and produce an <b>Incident Report</b>.
+                    </p>
+
+                    <div class="simulator-grid">
+                        <div class="sim-input-group" style="grid-column: span 2;">
+                            <label class="sim-label">Employee ID (copy from Persistent Store panel)</label>
+                            <input type="text" id="sabotageEmpId" placeholder="e.g. EMP-A3F7C2">
+                        </div>
+                        <div class="sim-input-group" style="grid-column: span 2;">
+                            <label class="sim-label">Which record to delete from the database?</label>
+                            <select id="sabotageRecordType">
+                                <option value="email">Email record  (fails at: Remove Email)</option>
+                                <option value="account">Account record  (fails at: Disable Account)</option>
+                                <option value="resource">Resource record  (fails at: Revoke Resources)</option>
+                                <option value="access">Application Access  (fails at: Remove Application Access)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 18px; display: flex; gap: 12px;">
+                        <button class="btn-primary" style="flex:1; background: linear-gradient(135deg, #f43f5e, #9f1239);" onclick="sabotageRecord()">
+                            <span>&#x1F5D1;</span> Delete Record from Database
+                        </button>
+                        <button class="btn-secondary" style="flex:1;" onclick="loadState()">
+                            <span>&#x21BB;</span> Refresh DB View
+                        </button>
+                    </div>
+
+                    <div id="sabotageResult" style="display:none; margin-top:14px; padding:12px; border-radius:8px; border:1px solid; font-size:13px;"></div>
+
+                </div>
+
+                <!-- SYSTEM ARCHITECTURE & WORKFLOW DIAGRAM CARD -->
+                <div class="card" style="border-color: rgba(99, 102, 241, 0.35); box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.25);">
+                    <div class="card-header">
+                        <div class="card-title" style="color: var(--cyan);">
+                            <span>📐</span> System Architecture &amp; Workflow
+                        </div>
+                        <span class="pill" style="font-size:11px; color:var(--cyan); border-color:rgba(6,182,212,0.3);">Enterprise Overview</span>
+                    </div>
+
+                    <p class="card-desc">
+                        End-to-end architecture diagram showing the Web UI, Spring Boot REST Layer, Ollama LLM Service, Saga Compensation Engine, Domain Services, and Disk-Backed H2 Database.
+                    </p>
+
+                    <div style="margin-top: 14px; text-align: center; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-subtle); background: #ffffff; padding: 10px;">
+                        <img src="/architecture.png" alt="AccessGuard System Architecture Diagram" style="width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px; cursor: pointer;" onclick="window.open('/architecture.png', '_blank')">
+                    </div>
+
+                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-align: center;">
+                        <span>💡 Click diagram image to open high-resolution view in new tab</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============================================================
+         FRONTEND SCRIPT
+    ============================================================ -->
+    <script>
+        let currentPlan = null;
+        let activeTab = 'employees';
+        let currentState = {
+            employees: [],
+            accounts: [],
+            applicationAccess: [],
+            resources: [],
+            emails: {}
+        };
+
+        const ONBOARDING_STEPS = [
+            "Create Employee",
+            "Create Account",
+            "Create Email",
+            "Grant Application Access",
+            "Create Storage"
+        ];
+
+        const OFFBOARDING_STEPS = [
+            "Remove Application Access",
+            "Disable Account",
+            "Revoke Resources",
+            "Remove Email",
+            "Deactivate Employee"
+        ];
+
+        function setPrompt(text) {
+            document.getElementById('aiMessage').value = text;
+        }
+
+        function resetConsole() {
+            document.getElementById('aiMessage').value = '';
+            document.getElementById('aiPlanBox').style.display = 'none';
+            document.getElementById('executionResultCard').style.display = 'none';
+            document.getElementById('btnExecutePlan').disabled = true;
+            currentPlan = null;
+        }
+
+        async function analyzeIntent() {
+            const message = document.getElementById('aiMessage').value.trim();
+            if (!message) {
+                alert('Please enter an employee access request.');
                 return;
             }
 
-            const data =
-                await response.json();
+            const btnAnalyze = document.getElementById('btnAnalyze');
+            btnAnalyze.disabled = true;
+            btnAnalyze.innerHTML = '<span>⏳</span> Parsing with Ollama...';
 
-            const employees =
-                data.employees || {};
+            try {
+                const response = await fetch('/api/ai/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
 
-            document.getElementById(
-                "employeeCount"
-            ).textContent =
-                Object.keys(employees).length;
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || 'AI request failed');
+                }
 
-        } catch (error) {
+                const plan = await response.json();
 
-            console.error(
-                "Unable to load state:",
-                error
-            );
-        }
-    }
+                if (plan.aiStatus === 'OFFLINE') {
+                    alert('⚠️ Ollama is offline. Please start Ollama with: ollama serve');
+                    return;
+                }
 
+                if (plan.intent === 'UNKNOWN') {
+                    alert('⚠️ Could not identify request: ' + (plan.message || 'Please provide a clear onboarding/offboarding request.'));
+                    return;
+                }
 
-    /*
-     * =========================================================
-     * RESET
-     * =========================================================
-     */
+                currentPlan = plan;
+                renderPlanPreview(plan);
+                document.getElementById('btnExecutePlan').disabled = false;
 
-    function resetAll() {
-
-        plan = null;
-
-        document.getElementById(
-            "message"
-        ).value = "";
-
-        document.getElementById(
-            "ai"
-        ).style.display = "none";
-
-        document.getElementById(
-            "plan"
-        ).style.display = "none";
-
-        document.getElementById(
-            "result"
-        ).style.display = "none";
-
-        document.getElementById(
-            "execute"
-        ).disabled = true;
-
-        document.getElementById(
-            "steps"
-        ).innerHTML =
-            `
-            <div class="muted">
-                Waiting for an AI request...
-            </div>
-            `;
-
-        document.getElementById(
-            "requestDetails"
-        ).innerHTML = "";
-
-        addHistory(
-            "System reset",
-            "READY"
-        );
-    }
-
-
-    /*
-     * =========================================================
-     * HISTORY
-     * =========================================================
-     */
-
-    function addHistory(
-        text,
-        status
-    ) {
-
-        const history =
-            document.getElementById(
-                "history"
-            );
-
-        const item =
-            document.createElement(
-                "div"
-            );
-
-        let tagClass =
-            "ok";
-
-        if (
-            status === "FAILED"
-        ) {
-
-            tagClass = "bad";
-
-        } else if (
-            status === "PARTIAL"
-        ) {
-
-            tagClass = "warn";
+            } catch (err) {
+                alert('Error analyzing request: ' + err.message);
+            } finally {
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerHTML = '<span>🔍</span> Analyze Intent';
+            }
         }
 
-        item.innerHTML =
-            `
-            ${escapeHtml(text)}
+        function renderPlanPreview(plan) {
+            document.getElementById('aiPlanBox').style.display = 'block';
+            document.getElementById('planIntentBadge').innerText = plan.intent;
+            document.getElementById('planIntentBadge').className = 
+                'step-badge ' + (plan.intent === 'ONBOARD' ? 'badge-success' : 'badge-failed');
 
-            <span class="tag ${tagClass}">
-                ${escapeHtml(status)}
-            </span>
-            `;
+            document.getElementById('metaName').innerText = plan.name || '(Not specified)';
+            document.getElementById('metaDept').innerText = plan.department || '-';
+            document.getElementById('metaRole').innerText = plan.role || '-';
+            document.getElementById('metaApp').innerText = plan.application || '-';
+            document.getElementById('metaLevel').innerText = plan.accessLevel || '-';
 
-        history.prepend(item);
-    }
+            const steps = plan.intent === 'ONBOARD' ? ONBOARDING_STEPS : OFFBOARDING_STEPS;
+            const container = document.getElementById('projectedStepsList');
+            container.innerHTML = '';
 
-
-    /*
-     * =========================================================
-     * STATISTICS
-     * =========================================================
-     */
-
-    function updateStats() {
-
-        document.getElementById(
-            "workflowCount"
-        ).textContent =
-            stats.workflows;
-
-        document.getElementById(
-            "compensationCount"
-        ).textContent =
-            stats.compensation;
-
-        document.getElementById(
-            "partialCount"
-        ).textContent =
-            stats.partial;
-    }
-
-
-    /*
-     * =========================================================
-     * HELPER FUNCTIONS
-     * =========================================================
-     */
-
-    function detail(
-        label,
-        value
-    ) {
-
-        return `
-            <div class="detail">
-
-                <b>
-                    ${escapeHtml(label)}
-                </b>
-
-                ${escapeHtml(value || "")}
-
-            </div>
-        `;
-    }
-
-
-    function statusIcon(
-        status
-    ) {
-
-        if (status === "SUCCESS") {
-            return "✅";
+            steps.forEach((step, idx) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-step';
+                item.innerHTML = `
+                    <div class="step-icon pending">${idx + 1}</div>
+                    <div class="step-content">
+                        <div class="step-title">${escapeHtml(step)}</div>
+                        <div class="step-desc">Queued for Saga execution</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
         }
 
-        if (status === "ROLLED_BACK") {
-            return "🔄";
+        async function executeCurrentPlan() {
+            if (!currentPlan) return;
+
+            const btnExecute = document.getElementById('btnExecutePlan');
+            btnExecute.disabled = true;
+            btnExecute.innerHTML = '<span>⏳</span> Executing Saga...';
+
+            try {
+                let endpoint = '';
+                let payload = {};
+
+                if (currentPlan.intent === 'ONBOARD') {
+                    endpoint = '/api/workflow/onboard';
+                    payload = {
+                        name: currentPlan.name,
+                        employeeId: currentPlan.employeeId,
+                        department: currentPlan.department || 'Engineering',
+                        role: currentPlan.role || 'Developer',
+                        application: currentPlan.application || 'GitLab',
+                        accessLevel: currentPlan.accessLevel || 'Developer'
+                    };
+                } else {
+                    endpoint = '/api/workflow/offboard';
+                    payload = {
+                        name: currentPlan.name,
+                        employeeId: currentPlan.employeeId,
+                        application: currentPlan.application
+                    };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    renderExecutionResult({
+                        status: 'FAILED',
+                        message: result.message || 'Operation failed with HTTP ' + response.status,
+                        steps: [{ name: (currentPlan.intent === 'ONBOARD' ? 'Onboard ' : 'Offboard ') + (currentPlan.name || currentPlan.employeeId || 'Employee'), status: 'FAILED' }],
+                        compensation: []
+                    });
+                } else {
+                    renderExecutionResult(result);
+                }
+                await loadState();
+
+            } catch (err) {
+                alert('Execution failed: ' + err.message);
+            } finally {
+                btnExecute.disabled = false;
+                btnExecute.innerHTML = '<span>⚡</span> Execute Saga Workflow';
+            }
         }
 
-        if (status === "PARTIAL") {
-            return "⚠️";
+        function updateSimOptions() {
+            const mode = document.getElementById('simMode').value;
+            const select = document.getElementById('simFailAt');
+            const btn = document.getElementById('btnSimTrigger');
+            select.innerHTML = '';
+
+            if (mode === 'ONBOARD') {
+                btn.innerHTML = '<span>💥</span> Trigger Onboarding Failure & Verify Rollback';
+                const options = [
+                    { val: 'Create Storage', label: 'Fail at Step 5: Create Storage (Rolls back steps 1-4)' },
+                    { val: 'Grant Application Access', label: 'Fail at Step 4: Grant Access (Rolls back steps 1-3)' },
+                    { val: 'Create Email', label: 'Fail at Step 3: Create Email (Rolls back steps 1-2)' },
+                    { val: 'Create Account', label: 'Fail at Step 2: Create Account (Rolls back step 1)' }
+                ];
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.val;
+                    el.innerText = opt.label;
+                    select.appendChild(el);
+                });
+            } else {
+                btn.innerHTML = '<span>🛡️</span> Trigger Offboarding Failure & Verify Partial Safety';
+                const options = [
+                    { val: 'Deactivate Employee', label: 'Fail at Step 5: Deactivate Employee (Preserves steps 1-4 completed)' },
+                    { val: 'Remove Email', label: 'Fail at Step 4: Remove Email (Preserves steps 1-3 completed)' },
+                    { val: 'Revoke Resources', label: 'Fail at Step 3: Revoke Resources (Preserves steps 1-2 completed)' },
+                    { val: 'Disable Account', label: 'Fail at Step 2: Disable Account (Preserves step 1 completed)' }
+                ];
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.val;
+                    el.innerText = opt.label;
+                    select.appendChild(el);
+                });
+            }
         }
 
-        if (
-            status === "PARTIAL_COMPENSATION"
-        ) {
-            return "⚠️";
+        async function runSimulatedFailure() {
+            const name = document.getElementById('simName').value.trim();
+            const app  = document.getElementById('simApp').value.trim();
+            const failAt = document.getElementById('simFailAt').value;
+
+            if (!name) { alert('Please enter an employee name.'); return; }
+
+            const payload = {
+                name, department: 'Platform Engineering',
+                role: 'Infrastructure Lead', application: app,
+                accessLevel: 'Admin', failAt
+            };
+
+            try {
+                const response = await fetch('/api/compensation/test/onboarding-failure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                renderExecutionResult(result);
+                await loadState();
+            } catch (err) {
+                alert('Simulator error: ' + err.message);
+            }
         }
 
-        return "❌";
-    }
+        async function sabotageRecord() {
+            const empId      = document.getElementById('sabotageEmpId').value.trim();
+            const recordType = document.getElementById('sabotageRecordType').value;
+            const resultDiv  = document.getElementById('sabotageResult');
 
+            if (!empId) {
+                alert('Please enter an Employee ID (copy it from the Persistent Store panel above).');
+                return;
+            }
 
-    /*
-     * Prevent HTML injection when displaying
-     * AI/backend data.
-     */
+            if (resultDiv) resultDiv.style.display = 'none';
 
-    function escapeHtml(
-        value
-    ) {
+            try {
+                const response = await fetch(`/api/admin/sabotage/${recordType}/${encodeURIComponent(empId)}`, {
+                    method: 'DELETE'
+                });
 
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+                const data = await response.json();
 
+                if (response.ok) {
+                    if (resultDiv) {
+                        resultDiv.style.display = 'block';
+                        resultDiv.style.borderColor = 'rgba(244,63,94,0.4)';
+                        resultDiv.style.background   = 'rgba(244,63,94,0.08)';
+                        resultDiv.innerHTML = `
+                            <div style="font-weight:700; color:#f43f5e; margin-bottom:8px;">
+                                &#x1F5D1; Record Deleted from Database
+                            </div>
+                            <div style="color:#94a3b8; line-height:1.6;">
+                                <b>Employee ID:</b> ${escapeHtml(empId)}<br>
+                                <b>Record type:</b> ${escapeHtml(data.recordType)}<br>
+                                <b>Next step:</b> ${escapeHtml(data.advice)}
+                            </div>`;
+                    }
+                    alert(`✅ ${data.recordType.toUpperCase()} record deleted for employee ${empId}!\n\n${data.advice}`);
+                    await loadState();
+                } else {
+                    if (resultDiv) {
+                        resultDiv.style.display  = 'block';
+                        resultDiv.style.borderColor = 'rgba(245,158,11,0.4)';
+                        resultDiv.style.background   = 'rgba(245,158,11,0.08)';
+                        resultDiv.innerHTML = `<div style="color:#f59e0b;">${escapeHtml(data.message || 'Request failed.')}</div>`;
+                    }
+                    alert('⚠️ Sabotage failed: ' + (data.message || 'Request failed.'));
+                }
+            } catch (err) {
+                if (resultDiv) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = `<div style="color:#f43f5e;">Error: ${escapeHtml(err.message)}</div>`;
+                }
+                alert('Error deleting record: ' + err.message);
+            }
+        }
 
-    /*
-     * =========================================================
-     * INITIAL STATE
-     * =========================================================
-     */
+        function renderExecutionResult(result) {
+            const card = document.getElementById('executionResultCard');
+            card.style.display = 'block';
 
-    loadState();
+            const badge    = document.getElementById('execStatusBadge');
+            const banner   = document.getElementById('resultBanner');
+            const title    = document.getElementById('bannerTitle');
+            const msg      = document.getElementById('bannerMessage');
+            const duration = document.getElementById('bannerDuration');
 
-    updateStats();
+            badge.innerText    = result.status;
+            duration.innerText = (result.durationMs || 15) + 'ms';
+            msg.innerText      = result.message || '';
 
-</script>
+            if (result.status === 'SUCCESS') {
+                badge.className   = 'step-badge badge-success';
+                banner.className  = 'result-banner success';
+                let titleHtml = '<span>&#x2705;</span> All Workflow Steps Succeeded';
+                if (result.employeeId) {
+                    titleHtml += ` &nbsp;<span style="font-size:13px;font-weight:500;color:#94a3b8;">Employee ID: <code style="color:#06b6d4;">${escapeHtml(result.employeeId)}</code></span>`;
+                }
+                title.innerHTML = titleHtml;
+            } else if (result.status === 'ROLLED_BACK') {
+                badge.className  = 'step-badge badge-failed';
+                banner.className = 'result-banner rollback';
+                title.innerHTML  = '<span>&#x1F504;</span> Failure Detected &#x2014; Reverse Rollback Completed';
+            } else {
+                badge.className  = 'step-badge badge-partial';
+                banner.className = 'result-banner partial';
+                title.innerHTML  = '<span>&#x26A0;&#xFE0F;</span> Partial Completion Preserved';
+            }
 
+            // Render Steps
+            const stepsContainer = document.getElementById('executedStepsTimeline');
+            stepsContainer.innerHTML = '';
+
+            (result.steps || []).forEach((s) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-step';
+                const ok = s.status === 'SUCCESS';
+                item.innerHTML = `
+                    <div class="step-icon ${ok ? 'success' : 'failed'}">${ok ? '&#x2713;' : '&#x2715;'}</div>
+                    <div class="step-content">
+                        <div class="step-title">${escapeHtml(s.name)}</div>
+                        <div class="step-desc">${ok ? 'Successfully executed' : (s.error ? escapeHtml(s.error) : 'Failed during execution')}</div>
+                    </div>
+                    <span class="step-badge ${ok ? 'badge-success' : 'badge-failed'}">${s.status}</span>
+                `;
+                stepsContainer.appendChild(item);
+            });
+
+            // Render Compensation
+            const compSection   = document.getElementById('compensationSection');
+            const compContainer = document.getElementById('compensationTimeline');
+
+            if (result.compensation && result.compensation.length > 0) {
+                compSection.style.display = 'block';
+                compContainer.innerHTML = '';
+                result.compensation.forEach((c) => {
+                    const item = document.createElement('div');
+                    item.className = 'timeline-step';
+                    item.innerHTML = `
+                        <div class="step-icon compensated">&#x21A9;</div>
+                        <div class="step-content">
+                            <div class="step-title">${escapeHtml(c.name)}</div>
+                            <div class="step-desc">Compensated in reverse order</div>
+                        </div>
+                        <span class="step-badge badge-compensated">${c.status}</span>
+                    `;
+                    compContainer.appendChild(item);
+                });
+            } else {
+                compSection.style.display = 'none';
+            }
+
+            // Render Incident Report (real offboarding data inconsistency)
+            let incidentBox = document.getElementById('incidentReportBox');
+            if (!incidentBox) {
+                incidentBox = document.createElement('div');
+                incidentBox.id = 'incidentReportBox';
+                card.appendChild(incidentBox);
+            }
+
+            if (result.incidentReport) {
+                incidentBox.style.display = 'block';
+                incidentBox.innerHTML = `
+                    <div style="margin-top:24px; padding:20px; border-radius:12px;
+                                border:1px solid rgba(244,63,94,0.45);
+                                background:rgba(244,63,94,0.07);">
+                        <div style="font-size:15px; font-weight:700; color:#f43f5e;
+                                    margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                            <span>&#x1F6A8;</span> INCIDENT REPORT — Administrator Action Required
+                        </div>
+                        <pre style="font-family:'JetBrains Mono',monospace; font-size:12px;
+                                    color:#94a3b8; white-space:pre-wrap; line-height:1.7;
+                                    background:rgba(0,0,0,0.3); padding:14px; border-radius:8px;">
+${escapeHtml(result.incidentReport)}</pre>
+                    </div>`;
+            } else {
+                incidentBox.style.display = 'none';
+            }
+
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function resetEntireDatabase() {
+            if (!confirm('Are you sure you want to delete ALL data from the database? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/reset-database', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert('✅ Database has been completely reset and is now empty.');
+                    await loadState();
+                } else {
+                    alert('Error resetting database: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Failed to reset database: ' + err.message);
+            }
+        }
+
+        async function loadState() {
+            try {
+                const response = await fetch('/api/workflow/state?t=' + Date.now(), { cache: 'no-store' });
+                if (!response.ok) return;
+
+                currentState = await response.json();
+                
+                document.getElementById('countEmp').innerText = (currentState.employees || []).length;
+                document.getElementById('countEmail').innerText = Object.keys(currentState.emails || {}).length;
+                document.getElementById('countAcc').innerText = (currentState.accounts || []).length;
+                document.getElementById('countAccess').innerText = (currentState.applicationAccess || []).length;
+                document.getElementById('countRes').innerText = (currentState.resources || []).length;
+
+                renderTable();
+
+            } catch (err) {
+                console.error('State load error', err);
+            }
+        }
+
+        function switchTab(tab, btnEl) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) {
+                btnEl.classList.add('active');
+            } else if (window.event && window.event.target) {
+                window.event.target.classList.add('active');
+            }
+            renderTable();
+        }
+
+        async function renderTable() {
+            const thead = document.getElementById('stateTableHeader');
+            const tbody = document.getElementById('stateTableBody');
+            const empty = document.getElementById('tableEmptyState');
+
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (activeTab === 'employees') {
+                thead.innerHTML = '<tr><th>ID</th><th>Name</th><th>Corporate Email</th><th>Department</th><th>Role</th><th>Status</th></tr>';
+                const items = currentState.employees || [];
+                if (items.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+
+                items.forEach(e => {
+                    const empEmail = (currentState.emails || {})[e.employeeId] || '-';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${escapeHtml(e.employeeId)}</td>
+                            <td><b>${escapeHtml(e.name)}</b></td>
+                            <td class="mono" style="color:var(--cyan);">${escapeHtml(empEmail)}</td>
+                            <td>${escapeHtml(e.department)}</td>
+                            <td>${escapeHtml(e.role)}</td>
+                            <td><span class="step-badge ${e.status === 'ACTIVE' ? 'badge-success' : 'badge-failed'}">${e.status}</span></td>
+                        </tr>
+                    `;
+                });
+
+            } else if (activeTab === 'emails') {
+                thead.innerHTML = '<tr><th>Employee ID</th><th>Employee Name</th><th>Assigned Email Address</th><th>Status</th></tr>';
+                const emailEntries = Object.entries(currentState.emails || {});
+                if (emailEntries.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+
+                emailEntries.forEach(([empId, addr]) => {
+                    const empObj = (currentState.employees || []).find(x => x.employeeId === empId);
+                    const empName = empObj ? empObj.name : '-';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${escapeHtml(empId)}</td>
+                            <td><b>${escapeHtml(empName)}</b></td>
+                            <td class="mono" style="color:var(--cyan); font-weight:600;">${escapeHtml(addr)}</td>
+                            <td><span class="step-badge badge-success">PROVISIONED</span></td>
+                        </tr>
+                    `;
+                });
+
+            } else if (activeTab === 'accounts') {
+                thead.innerHTML = '<tr><th>Account ID</th><th>Employee ID</th><th>Username</th><th>Status</th></tr>';
+                const items = currentState.accounts || [];
+                if (items.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+
+                items.forEach(a => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${escapeHtml(a.accountId)}</td>
+                            <td class="mono">${escapeHtml(a.employeeId)}</td>
+                            <td>${escapeHtml(a.username)}</td>
+                            <td><span class="step-badge ${a.status === 'ACTIVE' ? 'badge-success' : 'badge-failed'}">${a.status}</span></td>
+                        </tr>
+                    `;
+                });
+
+            } else if (activeTab === 'access') {
+                thead.innerHTML = '<tr><th>Employee ID</th><th>Application</th><th>Access Level</th><th>Status</th></tr>';
+                const items = currentState.applicationAccess || [];
+                if (items.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+
+                items.forEach(acc => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${escapeHtml(acc.employeeId)}</td>
+                            <td><b>${escapeHtml(acc.application)}</b></td>
+                            <td>${escapeHtml(acc.accessLevel)}</td>
+                            <td><span class="step-badge badge-success">${acc.status}</span></td>
+                        </tr>
+                    `;
+                });
+
+            } else if (activeTab === 'resources') {
+                thead.innerHTML = '<tr><th>Resource ID</th><th>Employee ID</th><th>Type</th><th>Status</th></tr>';
+                const items = currentState.resources || [];
+                if (items.length === 0) { empty.style.display = 'block'; return; }
+                empty.style.display = 'none';
+
+                items.forEach(r => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="mono">${escapeHtml(r.resourceId)}</td>
+                            <td class="mono">${escapeHtml(r.employeeId)}</td>
+                            <td>${escapeHtml(r.resourceType)}</td>
+                            <td><span class="step-badge badge-success">${r.status}</span></td>
+                        </tr>
+                    `;
+                });
+
+            } else if (activeTab === 'history') {
+                thead.innerHTML = '<tr><th>Workflow ID</th><th>Type</th><th>Target</th><th>Status</th><th>Duration</th></tr>';
+                try {
+                    const res = await fetch('/api/workflow/history?t=' + Date.now(), { cache: 'no-store' });
+                    const history = await res.json();
+                    if (!history || history.length === 0) { empty.style.display = 'block'; return; }
+                    empty.style.display = 'none';
+
+                    history.forEach(h => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="mono" style="font-size: 11px;">${escapeHtml(h.workflowId ? h.workflowId.substring(0, 8) : '')}...</td>
+                                <td><b>${escapeHtml(h.workflowType)}</b></td>
+                                <td class="mono">${escapeHtml(h.employeeId || '-')}</td>
+                                <td><span class="step-badge ${h.status === 'SUCCESS' ? 'badge-success' : 'badge-failed'}">${h.status}</span></td>
+                                <td class="mono">${h.durationMs}ms</td>
+                            </tr>
+                        `;
+                    });
+                } catch(e) {
+                    empty.style.display = 'block';
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initial Load Handler across all browser events (F5, refresh, back/forward cache)
+        function initPage() {
+            updateSimOptions();
+            loadState();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+            initPage();
+        }
+        window.addEventListener('pageshow', initPage);
+        window.addEventListener('load', initPage);
+    </script>
 </body>
 </html>
-```

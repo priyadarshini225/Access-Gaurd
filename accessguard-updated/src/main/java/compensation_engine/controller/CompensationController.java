@@ -1,9 +1,9 @@
 package compensation_engine.controller;
 
+import compensation_engine.dto.OffboardRequest;
+import compensation_engine.dto.OnboardRequest;
 import compensation_engine.saga.SagaResult;
-import compensation_engine.tools.AccessManagementTools;
-import compensation_engine.workflow.OnboardingWorkflow;
-import compensation_engine.workflow.RevocationWorkflow;
+import compensation_engine.service.WorkflowService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,23 +13,17 @@ import java.util.Map;
 @CrossOrigin
 public class CompensationController {
 
-    private final AccessManagementTools tools;
+    private final WorkflowService workflowService;
 
-    public CompensationController(
-            AccessManagementTools tools) {
-
-        this.tools = tools;
+    public CompensationController(WorkflowService workflowService) {
+        this.workflowService = workflowService;
     }
 
     @GetMapping("/health")
     public Map<String, String> health() {
-
         return Map.of(
-                "status",
-                "OK",
-
-                "message",
-                "AccessGuard compensation engine is running"
+                "status", "OK",
+                "message", "AccessGuard compensation engine is running"
         );
     }
 
@@ -37,47 +31,19 @@ public class CompensationController {
      * ---------------------------------------------------------
      * ONBOARDING FAILURE TEST
      * ---------------------------------------------------------
-     *
-     * This endpoint is ONLY for testing Saga compensation.
-     *
-     * The employee information comes from the request.
-     *
-     * Nothing is silently invented.
      */
     @PostMapping("/test/onboarding-failure")
-    public SagaResult onboardingFailure(
-            @RequestBody Map<String, Object> request) {
+    public SagaResult onboardingFailure(@RequestBody Map<String, Object> request) {
+        OnboardRequest req = new OnboardRequest();
+        req.setEmployeeId(optional(request, "employeeId"));
+        req.setName(required(request, "name"));
+        req.setDepartment(optionalDefault(request, "department", "Engineering"));
+        req.setRole(optionalDefault(request, "role", "Developer"));
+        req.setApplication(optionalDefault(request, "application", "GitLab"));
+        req.setAccessLevel(optionalDefault(request, "accessLevel", "Developer"));
+        req.setFailAt(optional(request, "failAt"));
 
-        String employeeId =
-                required(request, "employeeId");
-
-        String name =
-                required(request, "name");
-
-        String department =
-                required(request, "department");
-
-        String role =
-                required(request, "role");
-
-        String application =
-                required(request, "application");
-
-        String accessLevel =
-                required(request, "accessLevel");
-
-        String failAt =
-                optional(request, "failAt");
-
-        return new OnboardingWorkflow(tools).run(
-                employeeId,
-                name,
-                department,
-                role,
-                application,
-                accessLevel,
-                failAt
-        );
+        return workflowService.executeOnboarding(req);
     }
 
     /*
@@ -86,57 +52,37 @@ public class CompensationController {
      * ---------------------------------------------------------
      */
     @PostMapping("/test/offboarding-failure")
-    public SagaResult offboardingFailure(
-            @RequestBody Map<String, Object> request) {
+    public SagaResult offboardingFailure(@RequestBody Map<String, Object> request) {
+        OffboardRequest req = new OffboardRequest();
+        req.setEmployeeId(optional(request, "employeeId"));
+        req.setName(optional(request, "name"));
+        req.setApplication(optional(request, "application"));
+        req.setFailAt(optional(request, "failAt"));
 
-        String employeeId =
-                required(request, "employeeId");
-
-        String application =
-                required(request, "application");
-
-        String failAt =
-                optional(request, "failAt");
-
-        return new RevocationWorkflow(tools).run(
-                employeeId,
-                application,
-                failAt
-        );
+        return workflowService.executeOffboarding(req);
     }
 
-    private String required(
-            Map<String, Object> request,
-            String key) {
-
-        String value =
-                optional(request, key);
-
+    private String required(Map<String, Object> request, String key) {
+        String value = optional(request, key);
         if (value.isBlank()) {
-
-            throw new IllegalArgumentException(
-                    "Required field missing: " + key
-            );
+            throw new IllegalArgumentException("Required field missing: " + key);
         }
-
         return value;
     }
 
-    private String optional(
-            Map<String, Object> request,
-            String key) {
+    private String optionalDefault(Map<String, Object> request, String key, String defaultValue) {
+        String val = optional(request, key);
+        return val.isBlank() ? defaultValue : val;
+    }
 
+    private String optional(Map<String, Object> request, String key) {
         if (request == null) {
             return "";
         }
-
-        Object value =
-                request.get(key);
-
+        Object value = request.get(key);
         if (value == null) {
             return "";
         }
-
         return value.toString().trim();
     }
 }
