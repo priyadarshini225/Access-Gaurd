@@ -1,5 +1,6 @@
 package compensation_engine.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
 
@@ -14,6 +15,7 @@ public class UserAccount {
     private String username;
 
     @Column(name = "password_hash", nullable = false)
+    @JsonIgnore
     private String passwordHash;
 
     @Column(name = "full_name", nullable = false)

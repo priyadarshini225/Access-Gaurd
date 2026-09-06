@@ -150,14 +150,14 @@ public class ApprovalService {
 
             OnboardRequest onboardingRequest = fromJson(approval.getRequestPayload());
             SagaResult result = workflowService.executeOnboarding(onboardingRequest);
-            approval.setStatus("EXECUTED");
+            approval.setStatus("SUCCESS".equals(result.getStatus()) ? "EXECUTED" : "EXECUTION_FAILED");
             approval.setWorkflowId(result.getWorkflowId());
             approval.setUpdatedAt(Instant.now());
             approvalRepository.save(approval);
                 auditEventService.record(
                     approval.getRequestId(), result.getWorkflowId(), approval.getRequester(), "SYSTEM",
-                    "ExecutionAgent", "WORKFLOW_EXECUTION", "EXECUTE_APPROVED_REQUEST", "SUCCESS",
-                    "Approved onboarding workflow completed.");
+                    "ExecutionAgent", "WORKFLOW_EXECUTION", "EXECUTE_APPROVED_REQUEST", result.getStatus(),
+                    "Approved onboarding workflow finished with status " + result.getStatus() + ".");
             return result;
         } catch (RuntimeException exception) {
             approval.setStatus("EXECUTION_FAILED");
@@ -175,6 +175,11 @@ public class ApprovalService {
     public ApprovalRequest find(String requestId) {
         return approvalRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Approval request not found: " + requestId));
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ApprovalRequest> recent() {
+        return approvalRepository.findTop20ByOrderByCreatedAtDesc();
     }
 
     private void rejectSelfApproval(ApprovalRequest request, String approver) {

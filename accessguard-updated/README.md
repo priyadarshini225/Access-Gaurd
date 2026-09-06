@@ -121,6 +121,28 @@ cd accessguard-updated
 mvn spring-boot:run
 ```
 
+Authentication is enabled by default. The dashboard accepts the seeded `admin`
+account credentials through its sign-in controls. For an unsecured local demo
+only, run with the development profile:
+
+```powershell
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+For local development, the built-in role accounts are:
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `admin` | `admin123` | Full administrator |
+| `operator` | `operator123` | Workflow operator |
+| `approver` | `approver123` | Approval decisions |
+| `auditor` | `auditor123` | Audit and reconciliation read access |
+| `user` | `user123` | Standard dashboard user |
+
+These are development credentials. Override them with `security.users.*.password`
+properties before using the application outside local development. Self-signup
+creates standard `USER` accounts only.
+
 ### 2. Run Automated Test Suite
 ```powershell
 mvn test

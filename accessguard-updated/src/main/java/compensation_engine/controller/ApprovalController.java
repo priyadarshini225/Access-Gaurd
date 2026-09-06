@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/approvals")
 @CrossOrigin
@@ -25,6 +27,12 @@ public class ApprovalController {
 
     public ApprovalController(ApprovalService approvalService) {
         this.approvalService = approvalService;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('OPERATOR', 'APPROVER', 'AUDITOR', 'ADMIN')")
+    public List<ApprovalRequest> recent() {
+        return approvalService.recent();
     }
 
     @PostMapping

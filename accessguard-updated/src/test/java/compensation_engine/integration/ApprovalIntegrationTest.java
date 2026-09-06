@@ -137,6 +137,34 @@ class ApprovalIntegrationTest {
                 .andExpect(jsonPath("[2].eventType").value("APPROVAL"));
     }
 
+    @Test
+    void failedSagaIsNotRecordedAsExecuted() throws Exception {
+        ApprovalSubmissionRequest submission = submission("hr-user", "approval-failure-01",
+                "Engineering", "Developer", "GitLab", "Developer");
+        submission.getOnboardingRequest().setFailAt("Create Storage");
+
+        String response = mockMvc.perform(post("/api/approvals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("AUTO_APPROVED"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String requestId = objectMapper.readTree(response).get("requestId").asText();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/approvals/{requestId}/execute", requestId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ROLLED_BACK"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/approvals/{requestId}", requestId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("EXECUTION_FAILED"));
+    }
+
     private ApprovalSubmissionRequest submission(String requester,
                                                  String employeeId,
                                                  String department,

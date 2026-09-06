@@ -28,13 +28,23 @@ public class SecurityConfig {
 
         if (securityEnabled) {
             http.authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/compensation/health", "/h2-console/**", "/", "/index.html", "/css/**", "/js/**").permitAll()
+                    .requestMatchers("/api/compensation/health", "/api/auth/**", "/", "/index.html", "/architecture.png", "/favicon.ico", "/css/**", "/js/**").permitAll()
                     .requestMatchers("/api/admin/**", "/api/users/**", "/api/policies/**").hasRole("ADMIN")
                     .requestMatchers("/api/audit/**").hasAnyRole("SECURITY_AUDITOR", "AUDITOR", "ADMIN")
+                    .requestMatchers("/api/ai/**", "/api/agent/**")
+                        .hasAnyRole("USER", "OPERATOR", "APPROVER", "SECURITY_AUDITOR", "AUDITOR", "ADMIN")
+                    .requestMatchers("/api/workflow/onboard", "/api/workflow/offboard", "/api/workflow/revoke-access")
+                        .hasAnyRole("OPERATOR", "ADMIN")
+                    .requestMatchers("/api/workflow/state", "/api/workflow/history")
+                        .hasAnyRole("USER", "OPERATOR", "APPROVER", "AUDITOR", "SECURITY_AUDITOR", "ADMIN")
+                    .requestMatchers("/api/compensation/test/**").hasRole("ADMIN")
+                    .requestMatchers("/api/approvals").hasAnyRole("OPERATOR", "APPROVER", "ADMIN")
                     .requestMatchers("/api/approvals/*/approve", "/api/approvals/*/reject")
                         .hasAnyRole("APPROVER", "ADMIN")
                     .requestMatchers("/api/approvals/*/execute", "/api/remediation/tasks/*/execute")
                         .hasAnyRole("OPERATOR", "ADMIN")
+                    .requestMatchers("/api/approvals/*")
+                        .hasAnyRole("OPERATOR", "APPROVER", "AUDITOR", "ADMIN")
                     .requestMatchers("/api/remediation/tasks/*/approve")
                         .hasAnyRole("APPROVER", "ADMIN")
                     .requestMatchers("/api/remediation/**", "/api/reconciliation/**", "/api/access-expiry/**")
@@ -61,15 +71,21 @@ public class SecurityConfig {
             PasswordEncoder passwordEncoder,
             @Value("${security.users.admin.password:admin123}") String adminPassword,
             @Value("${security.users.operator.password:operator123}") String operatorPassword,
-            @Value("${security.users.auditor.password:auditor123}") String auditorPassword) {
+            @Value("${security.users.auditor.password:auditor123}") String auditorPassword,
+            @Value("${security.users.approver.password:approver123}") String approverPassword,
+            @Value("${security.users.user.password:user123}") String userPassword) {
         return username -> {
             // Check property-defined test overrides first
-            if ("admin".equalsIgnoreCase(username) && !"admin123".equals(adminPassword)) {
+            if ("admin".equalsIgnoreCase(username)) {
                 return User.withUsername("admin").password(passwordEncoder.encode(adminPassword)).roles("ADMIN", "SECURITY", "APPROVER", "OPERATOR", "AUDITOR", "SECURITY_AUDITOR").build();
-            } else if ("operator".equalsIgnoreCase(username) && !"operator123".equals(operatorPassword)) {
+            } else if ("operator".equalsIgnoreCase(username)) {
                 return User.withUsername("operator").password(passwordEncoder.encode(operatorPassword)).roles("OPERATOR", "APPROVER").build();
-            } else if ("auditor".equalsIgnoreCase(username) && !"auditor123".equals(auditorPassword)) {
+            } else if ("auditor".equalsIgnoreCase(username)) {
                 return User.withUsername("auditor").password(passwordEncoder.encode(auditorPassword)).roles("AUDITOR", "SECURITY_AUDITOR").build();
+            } else if ("approver".equalsIgnoreCase(username)) {
+                return User.withUsername("approver").password(passwordEncoder.encode(approverPassword)).roles("APPROVER").build();
+            } else if ("user".equalsIgnoreCase(username)) {
+                return User.withUsername("user").password(passwordEncoder.encode(userPassword)).roles("USER").build();
             }
 
             // Check database user account
@@ -81,15 +97,6 @@ public class SecurityConfig {
                         .roles(account.getRole())
                         .disabled(!account.isEnabled())
                         .build();
-            }
-
-            // Fallback for default test users if DB is empty
-            if ("admin".equalsIgnoreCase(username)) {
-                return User.withUsername("admin").password(passwordEncoder.encode(adminPassword)).roles("ADMIN", "SECURITY", "APPROVER", "OPERATOR", "AUDITOR", "SECURITY_AUDITOR").build();
-            } else if ("operator".equalsIgnoreCase(username)) {
-                return User.withUsername("operator").password(passwordEncoder.encode(operatorPassword)).roles("OPERATOR", "APPROVER").build();
-            } else if ("auditor".equalsIgnoreCase(username)) {
-                return User.withUsername("auditor").password(passwordEncoder.encode(auditorPassword)).roles("AUDITOR", "SECURITY_AUDITOR").build();
             }
 
             throw new UsernameNotFoundException("User not found: " + username);

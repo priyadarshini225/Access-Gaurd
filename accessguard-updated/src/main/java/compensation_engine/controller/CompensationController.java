@@ -5,6 +5,7 @@ import compensation_engine.dto.OnboardRequest;
 import compensation_engine.saga.SagaResult;
 import compensation_engine.service.WorkflowService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -33,6 +34,7 @@ public class CompensationController {
      * ---------------------------------------------------------
      */
     @PostMapping("/test/onboarding-failure")
+    @PreAuthorize("hasRole('ADMIN')")
     public SagaResult onboardingFailure(@RequestBody Map<String, Object> request) {
         OnboardRequest req = new OnboardRequest();
         req.setEmployeeId(optional(request, "employeeId"));
@@ -52,6 +54,7 @@ public class CompensationController {
      * ---------------------------------------------------------
      */
     @PostMapping("/test/offboarding-failure")
+    @PreAuthorize("hasRole('ADMIN')")
     public SagaResult offboardingFailure(@RequestBody Map<String, Object> request) {
         OffboardRequest req = new OffboardRequest();
         req.setEmployeeId(optional(request, "employeeId"));

@@ -634,7 +634,7 @@
             font-weight: 500;
         }
 
-        select, input[type="text"] {
+        select, input[type="text"], input[type="password"] {
             background: var(--bg-input);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-sm);
@@ -646,8 +646,129 @@
             transition: border-color 0.2s;
         }
 
-        select:focus, input[type="text"]:focus {
+        select:focus, input[type="text"]:focus, input[type="password"]:focus {
             border-color: var(--primary);
+        }
+
+        .auth-panel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .auth-panel input {
+            width: 112px;
+            padding: 7px 9px;
+            font-size: 12px;
+        }
+
+        .auth-status {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .signup-panel {
+            display: none;
+            position: absolute;
+            right: 30px;
+            top: 78px;
+            z-index: 120;
+            width: min(360px, calc(100vw - 32px));
+            padding: 18px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hover);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+        }
+
+        .signup-panel.open { display: block; animation: fadeIn 0.2s ease; }
+        .signup-panel .workspace-form { margin-top: 12px; }
+
+        .governance-workspace {
+            margin-top: 28px;
+        }
+
+        .workspace-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .workspace-tab {
+            white-space: nowrap;
+            padding: 9px 13px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+        }
+
+        .workspace-tab.active {
+            color: var(--cyan);
+            border-color: rgba(6, 182, 212, 0.35);
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .workspace-panel { display: none; padding-top: 20px; }
+        .workspace-panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .workspace-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .workspace-form .full { grid-column: 1 / -1; }
+        .workspace-form button { margin-top: 4px; }
+
+        .workspace-output {
+            margin-top: 14px;
+            max-height: 310px;
+            overflow: auto;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .workspace-output pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+
+        .connector-list {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .connector-item {
+            padding: 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        .connector-item strong { display: block; margin-bottom: 5px; color: #fff; }
+        .connector-item span { color: var(--text-muted); font-size: 12px; }
+
+        @media (max-width: 768px) {
+            .workspace-grid, .workspace-form { grid-template-columns: 1fr; }
+            .workspace-form .full { grid-column: auto; }
+            .connector-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         /* ----------------------------------------------------
@@ -695,7 +816,28 @@
                     <div class="pill-dot" style="background:#818cf8; box-shadow:0 0 8px #818cf8;"></div>
                     <span>Database: <b>H2 File Mode</b></span>
                 </div>
+                <form class="auth-panel" onsubmit="saveCredentials(event)">
+                    <input id="apiUsername" type="text" placeholder="Username" autocomplete="username">
+                    <input id="apiPassword" type="password" placeholder="Password" autocomplete="current-password">
+                    <button class="btn-secondary" type="submit" style="padding: 7px 10px; font-size: 12px;">Sign in</button>
+                    <button class="btn-secondary" type="button" onclick="clearCredentials()" style="padding: 7px 10px; font-size: 12px;">Sign out</button>
+                    <button class="btn-secondary" type="button" onclick="toggleSignup()" style="padding: 7px 10px; font-size: 12px;">Sign up</button>
+                    <span id="authStatus" class="auth-status">Not signed in</span>
+                </form>
             </div>
+        </div>
+        <div id="signupPanel" class="signup-panel">
+            <div class="card-title" style="font-size:16px;">Create your account</div>
+            <div class="card-desc" style="margin:6px 0 0;">New accounts are created with the standard USER role.</div>
+            <form class="workspace-form" onsubmit="signup(event)">
+                <input id="signupUsername" class="full" type="text" placeholder="Username" minlength="3" required>
+                <input id="signupFullName" class="full" type="text" placeholder="Full name" required>
+                <input id="signupEmail" class="full" type="email" placeholder="Email (optional)">
+                <input id="signupPassword" class="full" type="password" placeholder="Password (8+ characters)" minlength="8" required>
+                <button class="btn-primary" type="submit">Create account</button>
+                <button class="btn-secondary" type="button" onclick="toggleSignup()">Cancel</button>
+            </form>
+            <div id="signupStatus" class="auth-status" style="margin-top:10px;"></div>
         </div>
     </header>
 
@@ -708,8 +850,8 @@
             <!-- LEFT COLUMN: AI CONSOLE & SAGA ORCHESTRATOR -->
             <div style="display: flex; flex-direction: column; gap: 24px;">
 
-                <!-- AI INTENT CONSOLE -->
-                <div class="card">
+                <!-- AI INTENT CONSOLE: Requester and Admin only -->
+                <div id="accessRequestCard" class="card">
                     <div class="card-header">
                         <div class="card-title">
                             <span>🤖</span> Intelligent Access Request
@@ -838,7 +980,7 @@
                             <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="loadState()">
                                 <span>↻</span> Refresh
                             </button>
-                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; border-color: rgba(244,63,94,0.4); color: var(--rose);" onclick="resetEntireDatabase()">
+                            <button id="resetDatabaseButton" class="btn-secondary role-admin-only" style="display:none; padding: 6px 12px; font-size: 12px; border-color: rgba(244,63,94,0.4); color: var(--rose);" onclick="resetEntireDatabase()">
                                 <span>🗑️</span> Reset DB
                             </button>
                         </div>
@@ -866,19 +1008,23 @@
                     </div>
                 </div>
 
-                                   <!-- SAGA FAILURE & ROLLBACK SIMULATOR (Onboarding only) -->
-                <div class="card">
+                <!-- ADMIN-ONLY ONBOARDING FAILURE SIMULATOR -->
+                <div id="rollbackSimulatorCard" class="card role-admin-only" style="display:none;">
                     <div class="card-header">
                         <div class="card-title">
-                            <span>🧪</span> Onboarding Rollback Simulator
+                            <span>🧪</span> Admin Onboarding Rollback Simulator
                         </div>
                     </div>
 
                     <p class="card-desc">
-                        Inject a crash at any onboarding step to test the <b>ROLLBACK_ON_FAILURE</b> policy. All completed steps are automatically reversed.
+                        Admin-only test control for validating onboarding rollback. Onboarding failures are injected because they are otherwise difficult to reproduce safely. For offboarding, use the Admin record deletion tool below, then run the normal offboarding request.
                     </p>
 
                     <div class="simulator-grid">
+                        <div class="sim-input-group">
+                            <label class="sim-label">Simulation</label>
+                            <input type="text" value="Onboarding rollback" readonly>
+                        </div>
                         <div class="sim-input-group" style="grid-column: span 2;">
                             <label class="sim-label">Employee Name</label>
                             <input type="text" id="simName" value="Samantha Reed">
@@ -906,7 +1052,7 @@
                 </div>
 
                 <!-- ADMIN: REAL DATA SABOTAGE PANEL -->
-                <div class="card" style="border-color: rgba(244,63,94,0.4);">
+                <div id="sabotageCard" class="card role-admin-only" style="display:none; border-color: rgba(244,63,94,0.4);">
                     <div class="card-header">
                         <div class="card-title" style="color: var(--rose);">
                             <span>&#x1F5D1;</span> Admin: Delete a Record (Real Failure)
@@ -947,31 +1093,135 @@
 
                 </div>
 
-                <!-- SYSTEM ARCHITECTURE & WORKFLOW DIAGRAM CARD -->
-                <div class="card" style="border-color: rgba(99, 102, 241, 0.35); box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.25);">
-                    <div class="card-header">
-                        <div class="card-title" style="color: var(--cyan);">
-                            <span>📐</span> System Architecture &amp; Workflow
-                        </div>
-                        <span class="pill" style="font-size:11px; color:var(--cyan); border-color:rgba(6,182,212,0.3);">Enterprise Overview</span>
-                    </div>
-
-                    <p class="card-desc">
-                        End-to-end architecture diagram showing the Web UI, Spring Boot REST Layer, Ollama LLM Service, Saga Compensation Engine, Domain Services, and Disk-Backed H2 Database.
-                    </p>
-
-                    <div style="margin-top: 14px; text-align: center; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-subtle); background: #ffffff; padding: 10px;">
-                        <img src="/architecture.png" alt="AccessGuard System Architecture Diagram" style="width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px; cursor: pointer;" onclick="window.open('/architecture.png', '_blank')">
-                    </div>
-
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-align: center;">
-                        <span>💡 Click diagram image to open high-resolution view in new tab</span>
-                    </div>
-                </div>
-
             </div>
 
         </div>
+        <section id="governanceWorkspace" class="card governance-workspace" style="display: none;">
+            <div class="card-header">
+                <div>
+                    <div class="card-title"><span>🧭</span> Governance &amp; Operations</div>
+                </div>
+                <button class="btn-secondary" style="padding: 8px 12px; font-size: 12px;" onclick="refreshGovernance()">↻ Refresh</button>
+            </div>
+
+            <div class="workspace-tabs">
+                <button class="workspace-tab active" onclick="switchWorkspace('approvals', this)">Approvals</button>
+                <button class="workspace-tab role-operator role-approver role-admin" onclick="switchWorkspace('approvals', this)">Approvals</button>
+                <button class="workspace-tab role-operator role-auditor role-admin" onclick="switchWorkspace('identity', this)">Identity</button>
+                <button class="workspace-tab role-operator role-admin" onclick="switchWorkspace('security', this)">Security</button>
+                <button class="workspace-tab role-operator role-auditor role-admin" onclick="switchWorkspace('compliance', this)">Compliance</button>
+                <button class="workspace-tab role-auditor role-admin" onclick="switchWorkspace('audit', this)">Audit</button>
+                <button class="workspace-tab role-operator role-admin" onclick="switchWorkspace('connectors', this)">Connectors</button>
+                <button class="workspace-tab role-admin" onclick="switchWorkspace('admin', this)">Administration</button>
+            </div>
+
+            <div id="workspace-approvals" class="workspace-panel active">
+                <div class="btn-group"><button class="btn-primary" onclick="loadApprovals()">Load approval queue</button><span id="approvalSummary" class="auth-status"></span></div>
+                <div id="approvalOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-identity" class="workspace-panel">
+                <div class="workspace-grid">
+                    <div>
+                        <div class="card-title" style="font-size:15px;">Resolve identity</div>
+                        <div class="workspace-form" style="margin-top:12px;">
+                            <input id="identityId" type="text" placeholder="Employee ID">
+                            <input id="identityName" type="text" placeholder="Employee name">
+                            <input id="identityEmail" class="full" type="text" placeholder="Corporate email">
+                            <button class="btn-primary full" onclick="resolveIdentity()">Resolve employee</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card-title" style="font-size:15px;">Search candidates</div>
+                        <div class="workspace-form" style="margin-top:12px;">
+                            <input id="candidateQuery" type="text" placeholder="Name or ID">
+                            <input id="candidateDepartment" type="text" placeholder="Department">
+                            <input id="candidateRole" class="full" type="text" placeholder="Role">
+                            <button class="btn-secondary full" onclick="searchCandidates()">Search directory</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="identityOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-security" class="workspace-panel">
+                <div class="workspace-form">
+                    <input id="securityName" type="text" placeholder="Employee name">
+                    <input id="securityDepartment" type="text" placeholder="Department">
+                    <input id="securityRole" type="text" placeholder="Role">
+                    <input id="securityApplication" type="text" placeholder="Application">
+                    <input id="securityLevel" type="text" placeholder="Access level">
+                    <button class="btn-primary" onclick="evaluateSecurity()">Evaluate risk</button>
+                </div>
+                <div id="securityOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-compliance" class="workspace-panel">
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="runReconciliation()">Run reconciliation scan</button>
+                    <button class="btn-secondary" onclick="processExpiredAccess()">Process expired access</button>
+                    <button class="btn-secondary" onclick="loadExternalAccess()">Refresh external grants</button>
+                </div>
+                <div id="complianceOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-audit" class="workspace-panel">
+                <div class="btn-group"><button class="btn-primary" onclick="loadAuditEvents()">Load audit trail</button></div>
+                <div id="auditOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-connectors" class="workspace-panel">
+                <div class="connector-list">
+                    <div class="connector-item"><strong>Database</strong><span>Simulation fallback enabled</span></div>
+                    <div class="connector-item"><strong>GitLab</strong><span>Live-ready, credentials required</span></div>
+                    <div class="connector-item"><strong>Jira</strong><span>Live-ready, credentials required</span></div>
+                    <div class="connector-item"><strong>AWS IAM</strong><span>Live-ready, credentials required</span></div>
+                    <div class="connector-item"><strong>Slack</strong><span>Live-ready, credentials required</span></div>
+                </div>
+                <div id="connectorOutput" class="workspace-output"></div>
+            </div>
+
+            <div id="workspace-admin" class="workspace-panel">
+                <div class="workspace-grid">
+                    <div>
+                        <div class="card-title" style="font-size:15px;">Create system user</div>
+                        <div class="workspace-form" style="margin-top:12px;">
+                            <input id="newUserUsername" type="text" placeholder="Username">
+                            <input id="newUserPassword" type="password" placeholder="Temporary password">
+                            <input id="newUserName" type="text" placeholder="Full name">
+                            <input id="newUserEmail" type="text" placeholder="Email">
+                            <select id="newUserRole"><option>USER</option><option>OPERATOR</option><option>APPROVER</option><option>SECURITY_AUDITOR</option><option>ADMIN</option></select>
+                            <button class="btn-primary" onclick="createSystemUser()">Create user</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card-title" style="font-size:15px;">Create access policy</div>
+                        <div class="workspace-form" style="margin-top:12px;">
+                            <input id="policyDepartment" type="text" placeholder="Department">
+                            <input id="policyRole" type="text" placeholder="Role or *">
+                            <input id="policyApplication" type="text" placeholder="Application">
+                            <input id="policyMaxLevel" type="text" placeholder="Maximum access level">
+                            <label class="pill"><input id="policyApproval" type="checkbox"> Approval</label>
+                            <label class="pill"><input id="policyDualApproval" type="checkbox"> Dual approval</label>
+                            <button class="btn-primary full" onclick="createAccessPolicy()">Create policy</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:20px;">
+                    <div class="card-title" style="font-size:15px;">Create separation-of-duties rule</div>
+                    <div class="workspace-form" style="margin-top:12px;">
+                        <input id="sodApp1" type="text" placeholder="Application 1">
+                        <input id="sodRole1" type="text" placeholder="Role 1">
+                        <input id="sodApp2" type="text" placeholder="Application 2">
+                        <input id="sodRole2" type="text" placeholder="Role 2">
+                        <input id="sodDescription" class="full" type="text" placeholder="Rule description">
+                        <select id="sodRisk"><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select>
+                        <button class="btn-primary" onclick="createSodRule()">Create SoD rule</button>
+                    </div>
+                </div>
+                <div id="adminOutput" class="workspace-output"></div>
+            </div>
+        </section>
     </main>
 
     <!-- ============================================================
@@ -980,6 +1230,7 @@
     <script>
         let currentPlan = null;
         let activeTab = 'employees';
+        let apiCredentials = sessionStorage.getItem('accessguard.basicAuth') || '';
         let currentState = {
             employees: [],
             accounts: [],
@@ -987,6 +1238,87 @@
             resources: [],
             emails: {}
         };
+
+        function saveCredentials(event) {
+            event.preventDefault();
+            const username = document.getElementById('apiUsername').value.trim();
+            const password = document.getElementById('apiPassword').value;
+            if (!username || !password) {
+                setAuthStatus('Enter username and password', true);
+                return;
+            }
+            apiCredentials = btoa(`${username}:${password}`);
+            sessionStorage.setItem('accessguard.basicAuth', apiCredentials);
+            document.getElementById('apiPassword').value = '';
+            setAuthStatus(`Signed in as ${username}`, false);
+            configureRoleView();
+            loadState();
+        }
+
+        function clearCredentials() {
+            apiCredentials = '';
+            sessionStorage.removeItem('accessguard.basicAuth');
+            document.getElementById('apiUsername').value = '';
+            document.getElementById('apiPassword').value = '';
+            setAuthStatus('Not signed in', false);
+            document.getElementById('governanceWorkspace').style.display = 'none';
+            document.querySelectorAll('.role-admin-only, .role-operator-only').forEach(item => item.style.display = 'none');
+        }
+
+        function toggleSignup() {
+            document.getElementById('signupPanel').classList.toggle('open');
+        }
+
+        async function signup(event) {
+            event.preventDefault();
+            const status = document.getElementById('signupStatus');
+            const payload = {
+                username: document.getElementById('signupUsername').value.trim(),
+                fullName: document.getElementById('signupFullName').value.trim(),
+                email: document.getElementById('signupEmail').value.trim(),
+                password: document.getElementById('signupPassword').value
+            };
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const raw = await response.text();
+                let result = {};
+                try { result = raw ? JSON.parse(raw) : {}; } catch (_) { result = { message: raw }; }
+                if (!response.ok) throw new Error(result.message || `Signup failed (HTTP ${response.status})`);
+                document.getElementById('apiUsername').value = payload.username;
+                status.style.color = 'var(--emerald)';
+                status.innerText = 'Account created. Sign in above.';
+                document.getElementById('signupPassword').value = '';
+            } catch (error) {
+                status.style.color = 'var(--rose)';
+                status.innerText = error.message;
+            }
+        }
+
+        function setAuthStatus(message, error) {
+            const status = document.getElementById('authStatus');
+            status.innerText = message;
+            status.style.color = error ? 'var(--rose)' : 'var(--text-muted)';
+        }
+
+        async function apiFetch(url, options = {}) {
+            const headers = new Headers(options.headers || {});
+            if (apiCredentials) {
+                headers.set('Authorization', `Basic ${apiCredentials}`);
+            }
+            const response = await fetch(url, { ...options, headers });
+            if (response.status === 401) {
+                apiCredentials = '';
+                sessionStorage.removeItem('accessguard.basicAuth');
+                setAuthStatus('Authentication required', true);
+            } else if (response.status === 403) {
+                setAuthStatus('Insufficient permissions', true);
+            }
+            return response;
+        }
 
         const ONBOARDING_STEPS = [
             "Create Employee",
@@ -1028,7 +1360,7 @@
             btnAnalyze.innerHTML = '<span>⏳</span> Parsing with Ollama...';
 
             try {
-                const response = await fetch('/api/ai/plan', {
+                const response = await apiFetch('/api/ai/plan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message })
@@ -1084,6 +1416,15 @@
             const steps = plan.intent === 'ONBOARD' ? ONBOARDING_STEPS : OFFBOARDING_STEPS;
             const container = document.getElementById('projectedStepsList');
             container.innerHTML = '';
+            const executeButton = document.getElementById('btnExecutePlan');
+            if (currentRole() === 'USER' && plan.intent !== 'ONBOARD') {
+                executeButton.disabled = true;
+                executeButton.innerHTML = '<span>🔒</span> Operator Action Required';
+            } else {
+                executeButton.innerHTML = currentRole() === 'USER'
+                    ? '<span>📨</span> Submit Request for Approval'
+                    : '<span>⚡</span> Execute Saga Workflow';
+            }
 
             steps.forEach((step, idx) => {
                 const item = document.createElement('div');
@@ -1111,17 +1452,21 @@
                 let payload = {};
 
                 if (currentPlan.intent === 'ONBOARD') {
-                    endpoint = '/api/workflow/onboard';
+                    endpoint = '/api/agent/execute';
                     const defaultApp = (currentPlan.applications && currentPlan.applications[0]) ? currentPlan.applications[0].application : 'GitLab';
                     const defaultLvl = (currentPlan.applications && currentPlan.applications[0]) ? currentPlan.applications[0].accessLevel : 'Developer';
                     payload = {
-                        name: currentPlan.name,
-                        employeeId: currentPlan.employeeId,
-                        department: currentPlan.department || 'Engineering',
-                        role: currentPlan.role || 'Developer',
-                        application: currentPlan.application || defaultApp,
-                        accessLevel: currentPlan.accessLevel || defaultLvl,
-                        accessRequests: (currentPlan.applications && currentPlan.applications.length > 0) ? currentPlan.applications : []
+                        requester: currentRequester(),
+                        idempotencyKey: 'ui-' + Date.now(),
+                        onboardingRequest: {
+                            name: currentPlan.name,
+                            employeeId: currentPlan.employeeId,
+                            department: currentPlan.department || 'Engineering',
+                            role: currentPlan.role || 'Developer',
+                            application: currentPlan.application || defaultApp,
+                            accessLevel: currentPlan.accessLevel || defaultLvl,
+                            accessRequests: (currentPlan.applications && currentPlan.applications.length > 0) ? currentPlan.applications : []
+                        }
                     };
                 } else {
                     endpoint = '/api/workflow/offboard';
@@ -1132,7 +1477,7 @@
                     };
                 }
 
-                const response = await fetch(endpoint, {
+                const response = await apiFetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1147,6 +1492,11 @@
                         steps: [{ name: (currentPlan.intent === 'ONBOARD' ? 'Onboard ' : 'Offboard ') + (currentPlan.name || currentPlan.employeeId || 'Employee'), status: 'FAILED' }],
                         compensation: []
                     });
+                } else if (currentPlan.intent === 'ONBOARD' && result.approvalRequired) {
+                    renderAgentResult(result);
+                    showRequesterNotification(result);
+                } else if (currentPlan.intent === 'ONBOARD' && !result.steps) {
+                    renderAgentResult(result);
                 } else {
                     renderExecutionResult(result);
                 }
@@ -1156,45 +1506,277 @@
                 alert('Execution failed: ' + err.message);
             } finally {
                 btnExecute.disabled = false;
-                btnExecute.innerHTML = '<span>⚡</span> Execute Saga Workflow';
+                if (currentRole() === 'USER' && currentPlan && currentPlan.intent === 'ONBOARD') {
+                    btnExecute.disabled = true;
+                    btnExecute.innerHTML = '<span>✓</span> Request Sent';
+                } else {
+                    btnExecute.innerHTML = '<span>⚡</span> Execute Saga Workflow';
+                }
             }
         }
 
+        function currentRequester() {
+            const username = document.getElementById('apiUsername').value.trim();
+            if (!username) {
+                throw new Error('Sign in before submitting an approval-aware onboarding request.');
+            }
+            return username;
+        }
+
+        function currentRole() {
+            if (!apiCredentials) return null;
+            const username = document.getElementById('apiUsername').value.trim().toLowerCase();
+            if (username === 'admin') return 'ADMIN';
+            if (username === 'approver') return 'APPROVER';
+            if (username === 'operator') return 'OPERATOR';
+            if (username === 'auditor') return 'AUDITOR';
+            return 'USER';
+        }
+
+        function configureRoleView() {
+            const role = currentRole();
+            const workspace = document.getElementById('governanceWorkspace');
+            const canViewGovernance = role && role !== 'USER';
+            const executeButton = document.getElementById('btnExecutePlan');
+            executeButton.innerHTML = role === 'USER'
+                ? '<span>📨</span> Submit Request for Approval'
+                : '<span>⚡</span> Execute Saga Workflow';
+            document.getElementById('accessRequestCard').style.display = (role === 'USER' || role === 'ADMIN') ? '' : 'none';
+            workspace.style.display = canViewGovernance ? 'block' : 'none';
+            document.querySelectorAll('.workspace-tab').forEach(tab => {
+                const allowed = tab.className.split(' ').some(className => className === 'role-' + role.toLowerCase() || (role === 'ADMIN' && className === 'role-admin'));
+                tab.style.display = allowed ? '' : 'none';
+            });
+            document.querySelectorAll('.role-admin-only').forEach(item => item.style.display = role === 'ADMIN' ? '' : 'none');
+            document.querySelectorAll('.role-operator-only').forEach(item => item.style.display = (role === 'OPERATOR' || role === 'ADMIN') ? '' : 'none');
+            if (canViewGovernance) {
+                const firstVisible = Array.from(document.querySelectorAll('.workspace-tab')).find(tab => tab.style.display !== 'none');
+                if (firstVisible) firstVisible.click();
+            }
+        }
+
+        function showRequesterNotification(result) {
+            const message = result.approvalRequired
+                ? 'Request submitted. Notification queued for Approvers by email. No email was sent in this demo.'
+                : 'Request processed automatically because approval was not required.';
+            document.getElementById('bannerMessage').innerText = `${result.message || ''} ${message}`;
+        }
+
+        function switchWorkspace(panel, button) {
+            document.querySelectorAll('.workspace-panel').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.workspace-tab').forEach(item => item.classList.remove('active'));
+            document.getElementById('workspace-' + panel).classList.add('active');
+            button.classList.add('active');
+        }
+
+        function workspaceJson(target, value) {
+            document.getElementById(target).innerHTML = '<pre>' + escapeHtml(JSON.stringify(value, null, 2)) + '</pre>';
+        }
+
+        function actorName() {
+            const actor = document.getElementById('apiUsername').value.trim();
+            if (!actor) throw new Error('Sign in before performing this operation.');
+            return actor;
+        }
+
+        async function loadApprovals() {
+            try {
+                const response = await apiFetch('/api/approvals?t=' + Date.now(), { cache: 'no-store' });
+                const items = await response.json();
+                const output = document.getElementById('approvalOutput');
+                if (!response.ok) { workspaceJson('approvalOutput', items); return; }
+                document.getElementById('approvalSummary').innerText = `${items.length} recent request(s)`;
+                if (!items.length) { output.innerHTML = '<div class="empty-state">No approval requests found.</div>'; return; }
+                output.innerHTML = `<table><thead><tr><th>Request</th><th>Requester</th><th>Risk</th><th>Status</th><th>Decision</th><th>Actions</th></tr></thead><tbody>${items.map(item => `
+                    <tr><td class="mono">${escapeHtml(item.requestId)}</td><td>${escapeHtml(item.requester)}</td>
+                    <td>${escapeHtml(item.riskLevel)} (${item.riskScore})</td><td><span class="step-badge ${item.status === 'APPROVED' || item.status === 'EXECUTED' ? 'badge-success' : 'badge-compensated'}">${escapeHtml(item.status)}</span></td>
+                    <td>${escapeHtml(item.policyDecision)}</td><td>${approvalActions(item)}</td></tr>`).join('')}</tbody></table>`;
+            } catch (error) { workspaceJson('approvalOutput', { error: error.message }); }
+        }
+
+        function showRequesterNotification(result) {
+            const message = result.approvalRequired
+                ? 'Request submitted. Notification queued for Approvers by email. No email was sent in this demo.'
+                : 'Request processed automatically because approval was not required.';
+            document.getElementById('bannerMessage').innerText = `${result.message || ''} ${message}`;
+        }
+
+        function approvalActions(item) {
+            const id = escapeHtml(item.requestId);
+            const role = currentRole();
+            if (item.status === 'PENDING_APPROVAL' || item.status === 'PENDING_DUAL_APPROVAL' || item.status === 'APPROVED_ONE') {
+                if (role === 'OPERATOR') return '<span class="step-badge badge-partial">AWAITING APPROVAL</span>';
+                return `<button class="btn-secondary" style="padding:6px 9px;font-size:11px" onclick="decideApproval('${id}', 'approve')">Approve</button>
+                    <button class="btn-secondary" style="padding:6px 9px;font-size:11px" onclick="decideApproval('${id}', 'reject')">Reject</button>`;
+            }
+            if (item.status === 'APPROVED' || item.status === 'AUTO_APPROVED') {
+                const role = currentRole();
+                if (role === 'OPERATOR' || role === 'ADMIN') {
+                    return `<button class="btn-success" style="padding:6px 9px;font-size:11px" onclick="executeApproval('${id}')">Execute</button>`;
+                }
+                return '<span class="step-badge badge-partial">AWAITING OPERATOR</span>';
+            }
+            return '-';
+        }
+
+        async function decideApproval(requestId, decision) {
+            try {
+                const response = await apiFetch(`/api/approvals/${encodeURIComponent(requestId)}/${decision}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approver: actorName() })
+                });
+                workspaceJson('approvalOutput', await response.json());
+                await loadApprovals();
+            } catch (error) { workspaceJson('approvalOutput', { error: error.message }); }
+        }
+
+        async function executeApproval(requestId) {
+            try {
+                const response = await apiFetch(`/api/approvals/${encodeURIComponent(requestId)}/execute`, { method: 'POST' });
+                workspaceJson('approvalOutput', await response.json());
+                await loadApprovals();
+                await loadState();
+            } catch (error) { workspaceJson('approvalOutput', { error: error.message }); }
+        }
+
+        function renderAgentResult(result) {
+            const card = document.getElementById('executionResultCard');
+            card.style.display = 'block';
+            document.getElementById('execStatusBadge').innerText = 'REQUEST SENT';
+            document.getElementById('execStatusBadge').className = 'step-badge badge-success';
+            document.getElementById('resultBanner').className = 'result-banner success';
+            document.getElementById('bannerTitle').innerHTML = '<span>📨</span> Request Sent for Approval';
+            document.getElementById('bannerDuration').innerText = '';
+            document.getElementById('bannerMessage').innerText =
+                `Approvers have been notified. Risk: ${result.riskLevel || 'UNKNOWN'} (${result.riskScore || 0}). Request ID: ${result.requestId || '-'}`;
+            const requestButton = document.getElementById('btnExecutePlan');
+            requestButton.disabled = true;
+            requestButton.innerHTML = '<span>✓</span> Request Sent';
+            document.getElementById('executedStepsTimeline').innerHTML =
+                '<div class="empty-state">Workflow execution will appear here after an Operator or Admin executes the approved request.</div>';
+            document.getElementById('compensationSection').style.display = 'none';
+            document.getElementById('incidentReportBox')?.remove();
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function resolveIdentity() {
+            const payload = {
+                employeeId: document.getElementById('identityId').value,
+                name: document.getElementById('identityName').value,
+                email: document.getElementById('identityEmail').value
+            };
+            try {
+                const response = await apiFetch('/api/identity/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                workspaceJson('identityOutput', await response.json());
+            } catch (error) { workspaceJson('identityOutput', { error: error.message }); }
+        }
+
+        async function searchCandidates() {
+            const params = new URLSearchParams({ query: document.getElementById('candidateQuery').value, department: document.getElementById('candidateDepartment').value, role: document.getElementById('candidateRole').value });
+            try {
+                const response = await apiFetch('/api/identity/search?' + params.toString());
+                workspaceJson('identityOutput', await response.json());
+            } catch (error) { workspaceJson('identityOutput', { error: error.message }); }
+        }
+
+        async function evaluateSecurity() {
+            const application = document.getElementById('securityApplication').value;
+            const level = document.getElementById('securityLevel').value;
+            const payload = { name: document.getElementById('securityName').value, department: document.getElementById('securityDepartment').value, role: document.getElementById('securityRole').value, application, accessLevel: level, accessRequests: [{ application, accessLevel: level }] };
+            try {
+                const response = await apiFetch('/api/security/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                workspaceJson('securityOutput', await response.json());
+            } catch (error) { workspaceJson('securityOutput', { error: error.message }); }
+        }
+
+        async function runReconciliation() {
+            try {
+                const response = await apiFetch('/api/reconciliation/scan');
+                workspaceJson('complianceOutput', await response.json());
+            } catch (error) { workspaceJson('complianceOutput', { error: error.message }); }
+        }
+
+        async function processExpiredAccess() {
+            try {
+                const response = await apiFetch('/api/access-expiry/process', { method: 'POST' });
+                workspaceJson('complianceOutput', { expiredAccessRevoked: await response.json() });
+                await loadState();
+            } catch (error) { workspaceJson('complianceOutput', { error: error.message }); }
+        }
+
+        async function loadExternalAccess() {
+            await loadState();
+            workspaceJson('complianceOutput', currentState.externalAccess || []);
+        }
+
+        async function loadAuditEvents() {
+            try { const response = await apiFetch('/api/audit/events'); workspaceJson('auditOutput', await response.json()); }
+            catch (error) { workspaceJson('auditOutput', { error: error.message }); }
+        }
+
+        async function createSystemUser() {
+            const payload = {
+                username: document.getElementById('newUserUsername').value,
+                password: document.getElementById('newUserPassword').value,
+                fullName: document.getElementById('newUserName').value,
+                email: document.getElementById('newUserEmail').value,
+                role: document.getElementById('newUserRole').value
+            };
+            try { const response = await apiFetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); workspaceJson('adminOutput', await response.json()); }
+            catch (error) { workspaceJson('adminOutput', { error: error.message }); }
+        }
+
+        async function createAccessPolicy() {
+            const payload = {
+                department: document.getElementById('policyDepartment').value,
+                role: document.getElementById('policyRole').value,
+                application: document.getElementById('policyApplication').value,
+                maxAccessLevel: document.getElementById('policyMaxLevel').value,
+                requiresApproval: document.getElementById('policyApproval').checked,
+                requiresDualApproval: document.getElementById('policyDualApproval').checked,
+                enabled: true
+            };
+            try { const response = await apiFetch('/api/policies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); workspaceJson('adminOutput', await response.json()); }
+            catch (error) { workspaceJson('adminOutput', { error: error.message }); }
+        }
+
+        async function createSodRule() {
+            const payload = {
+                app1: document.getElementById('sodApp1').value,
+                role1: document.getElementById('sodRole1').value,
+                app2: document.getElementById('sodApp2').value,
+                role2: document.getElementById('sodRole2').value,
+                description: document.getElementById('sodDescription').value,
+                riskLevel: document.getElementById('sodRisk').value,
+                enabled: true
+            };
+            try { const response = await apiFetch('/api/policies/sod-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); workspaceJson('adminOutput', await response.json()); }
+            catch (error) { workspaceJson('adminOutput', { error: error.message }); }
+        }
+
+        async function refreshGovernance() {
+            await loadState();
+            await Promise.all([loadApprovals(), loadAuditEvents()]);
+        }
+
         function updateSimOptions() {
-            const mode = document.getElementById('simMode').value;
             const select = document.getElementById('simFailAt');
             const btn = document.getElementById('btnSimTrigger');
             select.innerHTML = '';
 
-            if (mode === 'ONBOARD') {
-                btn.innerHTML = '<span>💥</span> Trigger Onboarding Failure & Verify Rollback';
-                const options = [
-                    { val: 'Create Storage', label: 'Fail at Step 5: Create Storage (Rolls back steps 1-4)' },
-                    { val: 'Grant Application Access', label: 'Fail at Step 4: Grant Access (Rolls back steps 1-3)' },
-                    { val: 'Create Email', label: 'Fail at Step 3: Create Email (Rolls back steps 1-2)' },
-                    { val: 'Create Account', label: 'Fail at Step 2: Create Account (Rolls back step 1)' }
-                ];
-                options.forEach(opt => {
-                    const el = document.createElement('option');
-                    el.value = opt.val;
-                    el.innerText = opt.label;
-                    select.appendChild(el);
-                });
-            } else {
-                btn.innerHTML = '<span>🛡️</span> Trigger Offboarding Failure & Verify Partial Safety';
-                const options = [
-                    { val: 'Deactivate Employee', label: 'Fail at Step 5: Deactivate Employee (Preserves steps 1-4 completed)' },
-                    { val: 'Remove Email', label: 'Fail at Step 4: Remove Email (Preserves steps 1-3 completed)' },
-                    { val: 'Revoke Resources', label: 'Fail at Step 3: Revoke Resources (Preserves steps 1-2 completed)' },
-                    { val: 'Disable Account', label: 'Fail at Step 2: Disable Account (Preserves step 1 completed)' }
-                ];
-                options.forEach(opt => {
-                    const el = document.createElement('option');
-                    el.value = opt.val;
-                    el.innerText = opt.label;
-                    select.appendChild(el);
-                });
-            }
+            btn.innerHTML = '<span>💥</span> Trigger Onboarding Failure & Verify Rollback';
+            const options = [
+                { val: 'Create Storage', label: 'Fail at Step 5: Create Storage (Rolls back steps 1-4)' },
+                { val: 'Grant Application Access', label: 'Fail at Step 4: Grant Access (Rolls back steps 1-3)' },
+                { val: 'Create Email', label: 'Fail at Step 3: Create Email (Rolls back steps 1-2)' },
+                { val: 'Create Account', label: 'Fail at Step 2: Create Account (Rolls back step 1)' }
+            ];
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.val;
+                el.innerText = opt.label;
+                select.appendChild(el);
+            });
         }
 
         async function runSimulatedFailure() {
@@ -1211,7 +1793,7 @@
             };
 
             try {
-                const response = await fetch('/api/compensation/test/onboarding-failure', {
+                const response = await apiFetch('/api/compensation/test/onboarding-failure', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1237,7 +1819,7 @@
             if (resultDiv) resultDiv.style.display = 'none';
 
             try {
-                const response = await fetch(`/api/admin/sabotage/${recordType}/${encodeURIComponent(empId)}`, {
+                const response = await apiFetch(`/api/admin/sabotage/${recordType}/${encodeURIComponent(empId)}`, {
                     method: 'DELETE'
                 });
 
@@ -1389,7 +1971,7 @@ ${escapeHtml(result.incidentReport)}</pre>
             }
 
             try {
-                const response = await fetch('/api/admin/reset-database', {
+                const response = await apiFetch('/api/admin/reset-database', {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -1405,8 +1987,12 @@ ${escapeHtml(result.incidentReport)}</pre>
         }
 
         async function loadState() {
+            if (!apiCredentials) {
+                setAuthStatus('Sign in to load the dashboard', false);
+                return;
+            }
             try {
-                const response = await fetch('/api/workflow/state?t=' + Date.now(), { cache: 'no-store' });
+                const response = await apiFetch('/api/workflow/state?t=' + Date.now(), { cache: 'no-store' });
                 if (!response.ok) return;
 
                 currentState = await response.json();
@@ -1536,7 +2122,7 @@ ${escapeHtml(result.incidentReport)}</pre>
             } else if (activeTab === 'users') {
                 thead.innerHTML = '<tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr>';
                 try {
-                    const res = await fetch('/api/users?t=' + Date.now(), { cache: 'no-store' });
+                    const res = await apiFetch('/api/users?t=' + Date.now(), { cache: 'no-store' });
                     const users = await res.json();
                     if (!users || users.length === 0) { empty.style.display = 'block'; return; }
                     empty.style.display = 'none';
@@ -1559,7 +2145,7 @@ ${escapeHtml(result.incidentReport)}</pre>
             } else if (activeTab === 'policies') {
                 thead.innerHTML = '<tr><th>Department</th><th>Role</th><th>Application</th><th>Max Level</th><th>Approval Required</th></tr>';
                 try {
-                    const res = await fetch('/api/policies?t=' + Date.now(), { cache: 'no-store' });
+                    const res = await apiFetch('/api/policies?t=' + Date.now(), { cache: 'no-store' });
                     const policies = await res.json();
                     if (!policies || policies.length === 0) { empty.style.display = 'block'; return; }
                     empty.style.display = 'none';
@@ -1582,7 +2168,7 @@ ${escapeHtml(result.incidentReport)}</pre>
             } else if (activeTab === 'history') {
                 thead.innerHTML = '<tr><th>Workflow ID</th><th>Type</th><th>Target</th><th>Status</th><th>Duration</th></tr>';
                 try {
-                    const res = await fetch('/api/workflow/history?t=' + Date.now(), { cache: 'no-store' });
+                    const res = await apiFetch('/api/workflow/history?t=' + Date.now(), { cache: 'no-store' });
                     const history = await res.json();
                     if (!history || history.length === 0) { empty.style.display = 'block'; return; }
                     empty.style.display = 'none';
@@ -1617,7 +2203,21 @@ ${escapeHtml(result.incidentReport)}</pre>
         // Initial Load Handler across all browser events (F5, refresh, back/forward cache)
         function initPage() {
             updateSimOptions();
+            restoreSignedInUser();
+            configureRoleView();
             loadState();
+        }
+
+        function restoreSignedInUser() {
+            if (!apiCredentials) return;
+            try {
+                const username = atob(apiCredentials).split(':')[0];
+                document.getElementById('apiUsername').value = username;
+                setAuthStatus(`Signed in as ${username}`, false);
+                configureRoleView();
+            } catch (_) {
+                clearCredentials();
+            }
         }
 
         if (document.readyState === 'loading') {
