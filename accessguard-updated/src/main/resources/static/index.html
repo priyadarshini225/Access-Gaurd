@@ -850,6 +850,8 @@
                         <div class="tab-btn" onclick="switchTab('accounts')">Accounts (<span id="countAcc">0</span>)</div>
                         <div class="tab-btn" onclick="switchTab('access')">App Access (<span id="countAccess">0</span>)</div>
                         <div class="tab-btn" onclick="switchTab('resources')">Resources (<span id="countRes">0</span>)</div>
+                        <div class="tab-btn" onclick="switchTab('users')">Users & Roles</div>
+                        <div class="tab-btn" onclick="switchTab('policies')">Security Policies</div>
                         <div class="tab-btn" onclick="switchTab('history')">History</div>
                     </div>
 
@@ -1530,6 +1532,52 @@ ${escapeHtml(result.incidentReport)}</pre>
                         </tr>
                     `;
                 });
+
+            } else if (activeTab === 'users') {
+                thead.innerHTML = '<tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr>';
+                try {
+                    const res = await fetch('/api/users?t=' + Date.now(), { cache: 'no-store' });
+                    const users = await res.json();
+                    if (!users || users.length === 0) { empty.style.display = 'block'; return; }
+                    empty.style.display = 'none';
+
+                    users.forEach(u => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><b>${escapeHtml(u.username)}</b></td>
+                                <td>${escapeHtml(u.fullName)}</td>
+                                <td class="mono" style="color:var(--cyan);">${escapeHtml(u.email || '-')}</td>
+                                <td><span class="step-badge badge-partial">${escapeHtml(u.role)}</span></td>
+                                <td><span class="step-badge ${u.enabled ? 'badge-success' : 'badge-failed'}">${u.enabled ? 'ACTIVE' : 'DISABLED'}</span></td>
+                            </tr>
+                        `;
+                    });
+                } catch(e) {
+                    empty.style.display = 'block';
+                }
+
+            } else if (activeTab === 'policies') {
+                thead.innerHTML = '<tr><th>Department</th><th>Role</th><th>Application</th><th>Max Level</th><th>Approval Required</th></tr>';
+                try {
+                    const res = await fetch('/api/policies?t=' + Date.now(), { cache: 'no-store' });
+                    const policies = await res.json();
+                    if (!policies || policies.length === 0) { empty.style.display = 'block'; return; }
+                    empty.style.display = 'none';
+
+                    policies.forEach(p => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><b>${escapeHtml(p.department)}</b></td>
+                                <td>${escapeHtml(p.role)}</td>
+                                <td><span class="mono" style="color:var(--cyan);">${escapeHtml(p.application)}</span></td>
+                                <td>${escapeHtml(p.maxAccessLevel)}</td>
+                                <td><span class="step-badge ${p.requiresApproval ? 'badge-compensated' : 'badge-success'}">${p.requiresApproval ? (p.requiresDualApproval ? 'DUAL APPROVAL' : 'YES') : 'AUTO'}</span></td>
+                            </tr>
+                        `;
+                    });
+                } catch(e) {
+                    empty.style.display = 'block';
+                }
 
             } else if (activeTab === 'history') {
                 thead.innerHTML = '<tr><th>Workflow ID</th><th>Type</th><th>Target</th><th>Status</th><th>Duration</th></tr>';
