@@ -1,5 +1,6 @@
 package compensation_engine.workflow;
 
+import compensation_engine.connector.ApplicationAccessConnectorRegistry;
 import compensation_engine.saga.Saga;
 import compensation_engine.saga.SagaResult;
 import compensation_engine.saga.SagaStep;
@@ -19,10 +20,10 @@ import compensation_engine.service.AccessService;
  */
 public class AccessRevocationWorkflow {
 
-    private final AccessService accessService;
+    private final ApplicationAccessConnectorRegistry accessConnectorRegistry;
 
-    public AccessRevocationWorkflow(AccessService accessService) {
-        this.accessService = accessService;
+    public AccessRevocationWorkflow(ApplicationAccessConnectorRegistry accessConnectorRegistry) {
+        this.accessConnectorRegistry = accessConnectorRegistry;
     }
 
     public SagaResult run(String employeeId, String application, String failAt) {
@@ -39,7 +40,8 @@ public class AccessRevocationWorkflow {
                     failIf(failAt, "Revoke Application Access");
                     failIf(failAt, stepName);
                     failIf(failAt, "Remove " + application + " Access");
-                    accessService.removeAccess(employeeId, application);
+                        accessConnectorRegistry.resolve(application)
+                            .revokeAccess(employeeId, application);
                 },
                 () -> {
                     throw new RuntimeException(

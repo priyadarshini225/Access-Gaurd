@@ -41,13 +41,13 @@ public class EmailService {
                 .trim()
                 .replaceAll("\\s+", ".");
 
-        cleanName = cleanName.replaceAll("[^a-z0-9.]", "");
+        cleanName = cleanName.replaceAll("[^a-z0-9]", "");
         if (cleanName.isBlank()) {
             cleanName = "user";
         }
 
         // Unique combination of name and ID: e.g. kavya.sharma.101@company.com
-        String address = cleanName + "." + employeeId + "@company.com";
+        String address = cleanName + "@company.local";
         Email email = new Email(employeeId, address);
         Email saved = emailRepository.save(email);
         log.info("Created email: {} for employee {}", address, employeeId);

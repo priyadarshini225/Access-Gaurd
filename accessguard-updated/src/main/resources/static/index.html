@@ -1070,8 +1070,14 @@
             document.getElementById('metaName').innerText = plan.name || '(Not specified)';
             document.getElementById('metaDept').innerText = plan.department || '-';
             document.getElementById('metaRole').innerText = plan.role || '-';
-            document.getElementById('metaApp').innerText = plan.application || '-';
-            document.getElementById('metaLevel').innerText = plan.accessLevel || '-';
+            if (plan.applications && plan.applications.length > 0) {
+                const appList = plan.applications.map(a => `${escapeHtml(a.application)} (${escapeHtml(a.accessLevel)})`).join(', ');
+                document.getElementById('metaApp').innerText = appList;
+                document.getElementById('metaLevel').innerText = plan.applications.length + ' Grant(s)';
+            } else {
+                document.getElementById('metaApp').innerText = plan.application || '-';
+                document.getElementById('metaLevel').innerText = plan.accessLevel || '-';
+            }
 
             const steps = plan.intent === 'ONBOARD' ? ONBOARDING_STEPS : OFFBOARDING_STEPS;
             const container = document.getElementById('projectedStepsList');
@@ -1104,13 +1110,16 @@
 
                 if (currentPlan.intent === 'ONBOARD') {
                     endpoint = '/api/workflow/onboard';
+                    const defaultApp = (currentPlan.applications && currentPlan.applications[0]) ? currentPlan.applications[0].application : 'GitLab';
+                    const defaultLvl = (currentPlan.applications && currentPlan.applications[0]) ? currentPlan.applications[0].accessLevel : 'Developer';
                     payload = {
                         name: currentPlan.name,
                         employeeId: currentPlan.employeeId,
                         department: currentPlan.department || 'Engineering',
                         role: currentPlan.role || 'Developer',
-                        application: currentPlan.application || 'GitLab',
-                        accessLevel: currentPlan.accessLevel || 'Developer'
+                        application: currentPlan.application || defaultApp,
+                        accessLevel: currentPlan.accessLevel || defaultLvl,
+                        accessRequests: (currentPlan.applications && currentPlan.applications.length > 0) ? currentPlan.applications : []
                     };
                 } else {
                     endpoint = '/api/workflow/offboard';

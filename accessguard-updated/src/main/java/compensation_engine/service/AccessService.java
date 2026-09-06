@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.Instant;
 
 @Service
 public class AccessService {
@@ -48,6 +49,14 @@ public class AccessService {
         log.info("Granted {} access to {} for employee {}",
                 accessLevel, application, employeeId);
         return saved;
+    }
+
+    @Transactional
+    public ApplicationAccess grantAccess(String employeeId, String application,
+                                         String accessLevel, Instant expiresAt) {
+        ApplicationAccess access = grantAccess(employeeId, application, accessLevel);
+        access.setExpiresAt(expiresAt);
+        return accessRepository.save(access);
     }
 
     /**

@@ -100,14 +100,16 @@ AccessGuard uses **H2 in file mode** by default for zero-friction local developm
 * **Username**: `sa`
 * **Password**: *(leave empty)*
 
-### Switching to PostgreSQL (Production)
-In `application.properties`:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/accessguard
-spring.datasource.username=postgres
-spring.datasource.password=yourpassword
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+### Database support
+AccessGuard uses H2 file mode as its supported database:
+
+```text
+JDBC URL: jdbc:h2:file:./data/accessguard
+Username: sa
+Password: empty
 ```
+
+No PostgreSQL installation or database setup is required.
 
 ---
 

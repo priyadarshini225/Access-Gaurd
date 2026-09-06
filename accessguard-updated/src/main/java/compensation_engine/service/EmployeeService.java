@@ -20,9 +20,12 @@ public class EmployeeService {
             LoggerFactory.getLogger(EmployeeService.class);
 
     private final EmployeeRepository employeeRepository;
+    private final compensation_engine.agent.identity.IdentityResolutionAgent identityResolutionAgent;
 
-    public EmployeeService(EmployeeRepository employeeRepository) {
+    public EmployeeService(EmployeeRepository employeeRepository,
+                           compensation_engine.agent.identity.IdentityResolutionAgent identityResolutionAgent) {
         this.employeeRepository = employeeRepository;
+        this.identityResolutionAgent = identityResolutionAgent;
     }
 
     // ----------------------------------------------------------------
@@ -130,52 +133,24 @@ public class EmployeeService {
      */
     @Transactional(readOnly = true)
     public String resolveEmployeeId(String employeeId, String name) {
+        compensation_engine.agent.identity.IdentityResolutionResult result =
+                identityResolutionAgent.resolve(employeeId, name, null);
 
-        String trimmedId = employeeId != null ? employeeId.trim() : "";
-        String trimmedName = name != null ? name.trim() : "";
-
-        // 1. If explicit ID provided and exists in DB
-        if (!trimmedId.isEmpty() && employeeRepository.findById(trimmedId).isPresent()) {
-            return trimmedId;
-        }
-
-        // 2. Search by explicit name if provided
-        if (!trimmedName.isEmpty()) {
-            List<Employee> matchesByName = employeeRepository.findByNameIgnoreCase(trimmedName);
-            if (matchesByName.size() == 1) {
-                return matchesByName.get(0).getEmployeeId();
-            } else if (matchesByName.size() > 1) {
-                List<String> ids = matchesByName.stream()
-                        .map(Employee::getEmployeeId)
-                        .collect(Collectors.toList());
-                throw new AmbiguousEmployeeNameException(trimmedName, ids);
+        if (result.getStatus() == compensation_engine.agent.identity.IdentityResolutionResult.Status.EXACT_MATCH) {
+            return result.getResolvedEmployeeId();
+        } else if (result.getStatus() == compensation_engine.agent.identity.IdentityResolutionResult.Status.AMBIGUOUS_MATCH) {
+            List<String> candidateIds = result.getCandidates().stream()
+                    .map(compensation_engine.agent.identity.CandidateMatch::getEmployeeId)
+                    .collect(Collectors.toList());
+            String query = (name != null && !name.isBlank()) ? name : employeeId;
+            throw new AmbiguousEmployeeNameException(query, candidateIds);
+        } else {
+            String target = (name != null && !name.isBlank()) ? name : (employeeId != null ? employeeId : "");
+            if (target.isBlank()) {
+                throw new IllegalArgumentException("Either employeeId or employee name must be provided.");
             }
-
-            // Fallback: check if the 'name' string is actually an employeeId
-            if (employeeRepository.findById(trimmedName).isPresent()) {
-                return trimmedName;
-            }
+            throw new EmployeeNotFoundException(target);
         }
-
-        // 3. If employeeId was provided but not found as an ID, check if it is an employee name
-        if (!trimmedId.isEmpty()) {
-            List<Employee> matchesByIdAsName = employeeRepository.findByNameIgnoreCase(trimmedId);
-            if (matchesByIdAsName.size() == 1) {
-                return matchesByIdAsName.get(0).getEmployeeId();
-            } else if (matchesByIdAsName.size() > 1) {
-                List<String> ids = matchesByIdAsName.stream()
-                        .map(Employee::getEmployeeId)
-                        .collect(Collectors.toList());
-                throw new AmbiguousEmployeeNameException(trimmedId, ids);
-            }
-        }
-
-        String searchTarget = !trimmedName.isEmpty() ? trimmedName : trimmedId;
-        if (searchTarget.isEmpty()) {
-            throw new IllegalArgumentException("Either employeeId or employee name must be provided.");
-        }
-
-        throw new EmployeeNotFoundException(searchTarget);
     }
 
     // ----------------------------------------------------------------

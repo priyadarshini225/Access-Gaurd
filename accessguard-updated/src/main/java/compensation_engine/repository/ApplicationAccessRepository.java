@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.time.Instant;
 
 @Repository
 public interface ApplicationAccessRepository
@@ -19,4 +20,6 @@ public interface ApplicationAccessRepository
             String employeeId, String application);
 
     void deleteByEmployeeId(String employeeId);
+
+        List<ApplicationAccess> findByExpiresAtBeforeAndStatus(Instant expiresAt, String status);
 }

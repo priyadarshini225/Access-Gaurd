@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDataController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminDataController.class);
@@ -37,6 +39,10 @@ public class AdminDataController {
     private final ApplicationAccessRepository accessRepository;
     private final ResourceRepository resourceRepository;
     private final WorkflowExecutionRepository executionRepository;
+    private final ApprovalRequestRepository approvalRequestRepository;
+    private final AuditEventRepository auditEventRepository;
+    private final ExternalAccessGrantRepository externalAccessGrantRepository;
+    private final RemediationTaskRepository remediationTaskRepository;
 
     public AdminDataController(EmailService emailService,
                                AccountService accountService,
@@ -47,7 +53,11 @@ public class AdminDataController {
                                EmailRepository emailRepository,
                                ApplicationAccessRepository accessRepository,
                                ResourceRepository resourceRepository,
-                               WorkflowExecutionRepository executionRepository) {
+                               WorkflowExecutionRepository executionRepository,
+                               ApprovalRequestRepository approvalRequestRepository,
+                               AuditEventRepository auditEventRepository,
+                               ExternalAccessGrantRepository externalAccessGrantRepository,
+                               RemediationTaskRepository remediationTaskRepository) {
         this.emailService        = emailService;
         this.accountService      = accountService;
         this.resourceService     = resourceService;
@@ -58,6 +68,10 @@ public class AdminDataController {
         this.accessRepository    = accessRepository;
         this.resourceRepository  = resourceRepository;
         this.executionRepository = executionRepository;
+        this.approvalRequestRepository = approvalRequestRepository;
+        this.auditEventRepository = auditEventRepository;
+        this.externalAccessGrantRepository = externalAccessGrantRepository;
+        this.remediationTaskRepository = remediationTaskRepository;
     }
 
     /**
@@ -74,6 +88,10 @@ public class AdminDataController {
         accountRepository.deleteAll();
         employeeRepository.deleteAll();
         executionRepository.deleteAll();
+        approvalRequestRepository.deleteAll();
+        auditEventRepository.deleteAll();
+        externalAccessGrantRepository.deleteAll();
+        remediationTaskRepository.deleteAll();
 
         return ResponseEntity.ok(Map.of(
                 "status", "RESET_SUCCESS",

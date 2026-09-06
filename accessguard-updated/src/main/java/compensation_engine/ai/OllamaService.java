@@ -53,7 +53,10 @@ public class OllamaService {
                   "department": "",
                   "role": "",
                   "application": "",
-                  "accessLevel": ""
+                  "accessLevel": "",
+                  "applications": [
+                    { "application": "GitLab", "accessLevel": "Maintainer" }
+                  ]
                 }
 
                 Rules:
@@ -185,6 +188,22 @@ public class OllamaService {
             plan.setRole(getText(root, "role", ""));
             plan.setApplication(getText(root, "application", ""));
             plan.setAccessLevel(getText(root, "accessLevel", ""));
+
+            if (root.has("applications") && root.get("applications").isArray()) {
+                java.util.List<AiPlanResponse.ApplicationGrant> list = new java.util.ArrayList<>();
+                for (JsonNode item : root.get("applications")) {
+                    String app = getText(item, "application", "");
+                    String lvl = getText(item, "accessLevel", "");
+                    if (!app.isBlank()) {
+                        list.add(new AiPlanResponse.ApplicationGrant(app, lvl));
+                    }
+                }
+                plan.setApplications(list);
+            }
+
+            if (plan.getApplications().isEmpty() && !plan.getApplication().isBlank()) {
+                plan.getApplications().add(new AiPlanResponse.ApplicationGrant(plan.getApplication(), plan.getAccessLevel()));
+            }
 
             return plan;
         } catch (Exception ex) {

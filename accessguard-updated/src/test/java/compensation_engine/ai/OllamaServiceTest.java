@@ -91,4 +91,31 @@ class OllamaServiceTest {
         assertEquals("Alice", response.getName());
         assertEquals("Slack", response.getApplication());
     }
+
+    @Test
+    @DisplayName("Should parse multi-application grants array from LLM")
+    void testParseMultiApplicationJson() {
+        String raw = """
+                {
+                  "intent": "ONBOARD",
+                  "name": "Kavya Sharma",
+                  "department": "Engineering",
+                  "role": "Lead Architect",
+                  "applications": [
+                    { "application": "GitLab", "accessLevel": "Maintainer" },
+                    { "application": "Jira", "accessLevel": "Admin" }
+                  ]
+                }
+                """;
+
+        AiPlanResponse response = ollamaService.parseJson(raw);
+
+        assertEquals("ONBOARD", response.getIntent());
+        assertEquals("Kavya Sharma", response.getName());
+        assertEquals(2, response.getApplications().size());
+        assertEquals("GitLab", response.getApplications().get(0).getApplication());
+        assertEquals("Maintainer", response.getApplications().get(0).getAccessLevel());
+        assertEquals("Jira", response.getApplications().get(1).getApplication());
+        assertEquals("Admin", response.getApplications().get(1).getAccessLevel());
+    }
 }

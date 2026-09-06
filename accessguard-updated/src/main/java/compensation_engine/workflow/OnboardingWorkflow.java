@@ -1,5 +1,7 @@
 package compensation_engine.workflow;
 
+import compensation_engine.dto.AccessGrantRequest;
+import compensation_engine.connector.ApplicationAccessConnectorRegistry;
 import compensation_engine.exception.DataInconsistencyException;
 import compensation_engine.saga.Saga;
 import compensation_engine.saga.SagaResult;
@@ -7,24 +9,26 @@ import compensation_engine.saga.SagaStep;
 import compensation_engine.saga.WorkflowPolicy;
 import compensation_engine.service.*;
 
+import java.util.List;
+
 public class OnboardingWorkflow {
 
     private final EmployeeService employeeService;
     private final AccountService accountService;
     private final EmailService emailService;
-    private final AccessService accessService;
+    private final ApplicationAccessConnectorRegistry accessConnectorRegistry;
     private final ResourceService resourceService;
 
     public OnboardingWorkflow(EmployeeService employeeService,
                               AccountService accountService,
                               EmailService emailService,
-                              AccessService accessService,
-                              ResourceService resourceService) {
+                              ResourceService resourceService,
+                              ApplicationAccessConnectorRegistry accessConnectorRegistry) {
         this.employeeService = employeeService;
         this.accountService = accountService;
         this.emailService = emailService;
-        this.accessService = accessService;
         this.resourceService = resourceService;
+        this.accessConnectorRegistry = accessConnectorRegistry;
     }
 
     public SagaResult run(String employeeId,
@@ -35,12 +39,24 @@ public class OnboardingWorkflow {
                           String accessLevel,
                           String failAt) {
 
+                return run(employeeId, name, department, role,
+                    List.of(new AccessGrantRequest(application, accessLevel)), failAt);
+                }
+
+                public SagaResult run(String employeeId,
+                          String name,
+                          String department,
+                          String role,
+                          List<AccessGrantRequest> accessRequests,
+                          String failAt) {
+
         validate(employeeId, "Employee ID");
         validate(name, "Employee name");
         validate(department, "Department");
         validate(role, "Role");
-        validate(application, "Application");
-        validate(accessLevel, "Access level");
+        if (accessRequests == null || accessRequests.isEmpty()) {
+            throw new IllegalArgumentException("At least one access request is required.");
+        }
 
         Saga saga = new Saga(WorkflowPolicy.ROLLBACK_ON_FAILURE);
 
@@ -84,15 +100,26 @@ public class OnboardingWorkflow {
         /*
          * STEP 4: Grant Application Access
          */
-        saga.addStep(new SagaStep(
-                "Grant " + application + " Access",
-                () -> {
-                    failIf(failAt, "Grant Application Access");
-                    failIf(failAt, "Grant " + application + " Access");
-                    accessService.grantAccess(employeeId, application, accessLevel);
-                },
-                () -> safeRun(() -> accessService.removeAccess(employeeId, application))
-        ));
+        for (AccessGrantRequest accessRequest : accessRequests) {
+            validate(accessRequest.getApplication(), "Application");
+            validate(accessRequest.getAccessLevel(), "Access level");
+
+            String application = accessRequest.getApplication().trim();
+            String accessLevel = accessRequest.getAccessLevel().trim();
+            String stepName = "Grant " + application + " Access";
+
+            saga.addStep(new SagaStep(
+                    stepName,
+                    () -> {
+                        failIf(failAt, "Grant Application Access");
+                        failIf(failAt, stepName);
+                        accessConnectorRegistry.resolve(application)
+                            .grantAccess(employeeId, application, accessLevel, accessRequest.getExpiresAt());
+                    },
+                        () -> safeRun(() -> accessConnectorRegistry.resolve(application)
+                            .revokeAccess(employeeId, application))
+            ));
+        }
 
         /*
          * STEP 5: Create Storage

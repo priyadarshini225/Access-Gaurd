@@ -167,6 +167,21 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(
+            IllegalStateException ex) {
+
+        log.warn("Invalid state transition: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        409,
+                        "Conflict",
+                        ex.getMessage()
+                ));
+    }
+
     /* ----------------------------------------------------------------
      * 500 — Fallback
      * ---------------------------------------------------------------- */

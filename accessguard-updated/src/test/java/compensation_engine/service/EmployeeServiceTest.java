@@ -23,11 +23,16 @@ class EmployeeServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @Mock
+    private compensation_engine.repository.EmailRepository emailRepository;
+
+    private compensation_engine.agent.identity.IdentityResolutionAgent identityResolutionAgent;
     private EmployeeService employeeService;
 
     @BeforeEach
     void setUp() {
-        employeeService = new EmployeeService(employeeRepository);
+        identityResolutionAgent = new compensation_engine.agent.identity.IdentityResolutionAgent(employeeRepository, emailRepository);
+        employeeService = new EmployeeService(employeeRepository, identityResolutionAgent);
     }
 
     @Test

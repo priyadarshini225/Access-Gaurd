@@ -1,5 +1,7 @@
 package compensation_engine.dto;
 
+import java.util.List;
+
 public class AiPlanResponse {
 
     private String intent;
@@ -12,6 +14,25 @@ public class AiPlanResponse {
     private String message;
     private String aiModel;
     private String aiStatus;
+
+    private List<ApplicationGrant> applications = new java.util.ArrayList<>();
+
+    public static class ApplicationGrant {
+        private String application;
+        private String accessLevel;
+
+        public ApplicationGrant() {}
+        public ApplicationGrant(String application, String accessLevel) {
+            this.application = application;
+            this.accessLevel = accessLevel;
+        }
+
+        public String getApplication() { return application; }
+        public void setApplication(String application) { this.application = application; }
+
+        public String getAccessLevel() { return accessLevel; }
+        public void setAccessLevel(String accessLevel) { this.accessLevel = accessLevel; }
+    }
 
     public String getIntent()              { return intent; }
     public void setIntent(String v)        { this.intent = v; }
@@ -33,6 +54,9 @@ public class AiPlanResponse {
 
     public String getAccessLevel()         { return accessLevel; }
     public void setAccessLevel(String v)   { this.accessLevel = v; }
+
+    public List<ApplicationGrant> getApplications() { return applications; }
+    public void setApplications(List<ApplicationGrant> v) { this.applications = v != null ? v : new java.util.ArrayList<>(); }
 
     public String getMessage()             { return message; }
     public void setMessage(String v)       { this.message = v; }

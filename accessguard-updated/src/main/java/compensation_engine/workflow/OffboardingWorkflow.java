@@ -1,6 +1,7 @@
 package compensation_engine.workflow;
 
 import compensation_engine.exception.DataInconsistencyException;
+import compensation_engine.connector.ApplicationAccessConnectorRegistry;
 import compensation_engine.saga.Saga;
 import compensation_engine.saga.SagaResult;
 import compensation_engine.saga.SagaStep;
@@ -30,22 +31,22 @@ public class OffboardingWorkflow {
     private final EmployeeService employeeService;
     private final AccountService accountService;
     private final EmailService emailService;
-    private final AccessService accessService;
+    private final ApplicationAccessConnectorRegistry accessConnectorRegistry;
     private final ResourceService resourceService;
 
     public OffboardingWorkflow(EmployeeService employeeService,
                                AccountService accountService,
                                EmailService emailService,
-                               AccessService accessService,
-                               ResourceService resourceService) {
+                               ResourceService resourceService,
+                               ApplicationAccessConnectorRegistry accessConnectorRegistry) {
         this.employeeService = employeeService;
         this.accountService = accountService;
         this.emailService = emailService;
-        this.accessService = accessService;
         this.resourceService = resourceService;
+        this.accessConnectorRegistry = accessConnectorRegistry;
     }
 
-    public SagaResult run(String employeeId, String application) {
+    public SagaResult run(String employeeId, String application, String failAt) {
         validate(employeeId, "Employee ID");
 
         Saga saga = new Saga(WorkflowPolicy.KEEP_PARTIAL_COMPLETION);
@@ -60,10 +61,14 @@ public class OffboardingWorkflow {
         saga.addStep(new SagaStep(
                 appStepName,
                 () -> {
+                    failIf(failAt, "Remove Application Access");
+                    failIf(failAt, appStepName);
                     if (application != null && !application.isBlank()) {
-                        accessService.removeAccess(employeeId, application);
+                        accessConnectorRegistry.resolve(application)
+                            .revokeAccess(employeeId, application);
                     } else {
-                        accessService.removeAllAccess(employeeId);
+                        accessConnectorRegistry.resolve("all")
+                            .revokeAllAccess(employeeId);
                     }
                 },
                 () -> {
@@ -78,7 +83,10 @@ public class OffboardingWorkflow {
          */
         saga.addStep(new SagaStep(
                 "Disable Account",
-                () -> accountService.disableAccount(employeeId),
+                () -> {
+                    failIf(failAt, "Disable Account");
+                    accountService.disableAccount(employeeId);
+                },
                 () -> {
                     throw new RuntimeException(
                             "Unsafe compensation blocked: re-enabling a disabled account is not permitted."
@@ -91,7 +99,10 @@ public class OffboardingWorkflow {
          */
         saga.addStep(new SagaStep(
                 "Revoke Resources",
-                () -> resourceService.deleteResources(employeeId),
+                () -> {
+                    failIf(failAt, "Revoke Resources");
+                    resourceService.deleteResources(employeeId);
+                },
                 () -> {
                     throw new RuntimeException(
                             "Unsafe compensation blocked: recreating revoked resources is not permitted."
@@ -104,7 +115,10 @@ public class OffboardingWorkflow {
          */
         saga.addStep(new SagaStep(
                 "Remove Email",
-                () -> emailService.deleteEmail(employeeId),
+                () -> {
+                    failIf(failAt, "Remove Email");
+                    emailService.deleteEmail(employeeId);
+                },
                 () -> {
                     throw new RuntimeException(
                             "Unsafe compensation blocked: restoring deleted email is not permitted."
@@ -117,7 +131,10 @@ public class OffboardingWorkflow {
          */
         saga.addStep(new SagaStep(
                 "Deactivate Employee",
-                () -> employeeService.deactivateEmployee(employeeId),
+                () -> {
+                    failIf(failAt, "Deactivate Employee");
+                    employeeService.deactivateEmployee(employeeId);
+                },
                 () -> {
                     throw new RuntimeException(
                             "Unsafe compensation blocked: reactivating an offboarded employee is not permitted."
@@ -180,6 +197,12 @@ public class OffboardingWorkflow {
     private void validate(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " cannot be empty.");
+        }
+    }
+
+    private void failIf(String failAt, String step) {
+        if (failAt != null && !failAt.isBlank() && failAt.equalsIgnoreCase(step)) {
+            throw new RuntimeException("Simulated failure at: " + step);
         }
     }
 }

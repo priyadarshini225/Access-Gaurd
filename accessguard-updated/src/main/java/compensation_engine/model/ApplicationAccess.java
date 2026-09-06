@@ -2,6 +2,8 @@ package compensation_engine.model;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "application_access")
 public class ApplicationAccess {
@@ -21,6 +23,9 @@ public class ApplicationAccess {
 
     @Column(nullable = false)
     private String status;
+
+    @Column(name = "expires_at")
+    private Instant expiresAt;
 
     public ApplicationAccess() {}
 
@@ -46,4 +51,7 @@ public class ApplicationAccess {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
 }

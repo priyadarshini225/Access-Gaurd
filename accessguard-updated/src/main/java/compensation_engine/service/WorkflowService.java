@@ -1,9 +1,11 @@
 package compensation_engine.service;
 
 import compensation_engine.dto.AiPlanResponse;
+import compensation_engine.dto.AccessGrantRequest;
 import compensation_engine.dto.OffboardRequest;
 import compensation_engine.dto.OnboardRequest;
 import compensation_engine.dto.RevokeAccessRequest;
+import compensation_engine.connector.ApplicationAccessConnectorRegistry;
 import compensation_engine.saga.SagaResult;
 import compensation_engine.workflow.AccessRevocationWorkflow;
 import compensation_engine.workflow.OffboardingWorkflow;
@@ -11,6 +13,9 @@ import compensation_engine.workflow.OnboardingWorkflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class WorkflowService {
@@ -20,20 +25,20 @@ public class WorkflowService {
     private final EmployeeService employeeService;
     private final AccountService accountService;
     private final EmailService emailService;
-    private final AccessService accessService;
+    private final ApplicationAccessConnectorRegistry accessConnectorRegistry;
     private final ResourceService resourceService;
     private final WorkflowExecutionService executionService;
 
     public WorkflowService(EmployeeService employeeService,
                            AccountService accountService,
                            EmailService emailService,
-                           AccessService accessService,
                            ResourceService resourceService,
+                           ApplicationAccessConnectorRegistry accessConnectorRegistry,
                            WorkflowExecutionService executionService) {
         this.employeeService = employeeService;
         this.accountService = accountService;
         this.emailService = emailService;
-        this.accessService = accessService;
+        this.accessConnectorRegistry = accessConnectorRegistry;
         this.resourceService = resourceService;
         this.executionService = executionService;
     }
@@ -42,8 +47,8 @@ public class WorkflowService {
         long startTime = System.currentTimeMillis();
 
         String employeeId = req.getEmployeeId();
-        // If employeeId is missing, non-numeric, or ALREADY exists in DB (active or inactive), generate next unique sequential ID (101, 102...)
-        if (employeeId == null || employeeId.isBlank() || !employeeId.trim().matches("\\d+") || employeeService.existsById(employeeId.trim())) {
+        // Preserve a caller-provided ID when it is valid and unused.
+        if (employeeId == null || employeeId.isBlank() || employeeService.existsById(employeeId.trim())) {
             employeeId = employeeService.generateNextEmployeeId();
         } else {
             employeeId = employeeId.trim();
@@ -52,15 +57,20 @@ public class WorkflowService {
         log.info("Executing Onboarding Workflow for employee: {} ({})", req.getName(), employeeId);
 
         OnboardingWorkflow workflow = new OnboardingWorkflow(
-                employeeService, accountService, emailService, accessService, resourceService);
+                employeeService, accountService, emailService, resourceService,
+            accessConnectorRegistry);
+
+        List<AccessGrantRequest> accessRequests = new ArrayList<>(req.getAccessRequests());
+        if (accessRequests.isEmpty()) {
+            accessRequests.add(new AccessGrantRequest(req.getApplication(), req.getAccessLevel()));
+        }
 
         SagaResult result = workflow.run(
                 employeeId,
                 req.getName(),
                 req.getDepartment(),
                 req.getRole(),
-                req.getApplication(),
-                req.getAccessLevel(),
+            accessRequests,
                 req.getFailAt()
         );
 
@@ -73,12 +83,11 @@ public class WorkflowService {
         long startTime = System.currentTimeMillis();
 
         String employeeId = employeeService.resolveEmployeeId(req.getEmployeeId(), req.getName());
-        log.info("Executing Complete Offboarding Workflow for resolved employeeId: {}", employeeId);
-
         OffboardingWorkflow workflow = new OffboardingWorkflow(
-                employeeService, accountService, emailService, accessService, resourceService);
+                employeeService, accountService, emailService, resourceService,
+            accessConnectorRegistry);
 
-        SagaResult result = workflow.run(employeeId, req.getApplication());
+        SagaResult result = workflow.run(employeeId, req.getApplication(), req.getFailAt());
 
         long duration = System.currentTimeMillis() - startTime;
         executionService.recordExecution("OFFBOARD", employeeId, result, duration);
@@ -92,7 +101,7 @@ public class WorkflowService {
         log.info("Executing Application Access Revocation Workflow for employeeId: {}, app: {}",
                 employeeId, req.getApplication());
 
-        AccessRevocationWorkflow workflow = new AccessRevocationWorkflow(accessService);
+        AccessRevocationWorkflow workflow = new AccessRevocationWorkflow(accessConnectorRegistry);
         SagaResult result = workflow.run(employeeId, req.getApplication(), req.getFailAt());
 
         long duration = System.currentTimeMillis() - startTime;
@@ -116,12 +125,24 @@ public class WorkflowService {
             req.setEmployeeId(plan.getEmployeeId());
             req.setDepartment(plan.getDepartment());
             req.setRole(plan.getRole());
-            req.setApplication(plan.getApplication());
-            req.setAccessLevel(plan.getAccessLevel());
+            if (plan.getApplications() != null && !plan.getApplications().isEmpty()) {
+                for (AiPlanResponse.ApplicationGrant grant : plan.getApplications()) {
+                    if (grant.getApplication() != null && !grant.getApplication().isBlank()) {
+                        req.getAccessRequests().add(new AccessGrantRequest(
+                                grant.getApplication().trim(),
+                                grant.getAccessLevel() != null ? grant.getAccessLevel().trim() : ""
+                        ));
+                    }
+                }
+            }
+
+            if (req.getAccessRequests().isEmpty() && plan.getApplication() != null && !plan.getApplication().isBlank()) {
+                req.setApplication(plan.getApplication());
+                req.setAccessLevel(plan.getAccessLevel());
+            }
 
             if (req.getName().isBlank() || req.getDepartment().isBlank() ||
-                    req.getRole().isBlank() || req.getApplication().isBlank() ||
-                    req.getAccessLevel().isBlank()) {
+                    req.getRole().isBlank() || (req.getApplication().isBlank() && req.getAccessRequests().isEmpty())) {
                 throw new IllegalArgumentException("AI onboarding plan is missing required fields.");
             }
 

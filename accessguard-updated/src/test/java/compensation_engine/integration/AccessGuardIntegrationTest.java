@@ -20,6 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1")
@@ -162,6 +164,31 @@ class AccessGuardIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.employees", hasSize(0)))
                 .andExpect(jsonPath("$.accounts", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Onboarding should provision multiple requested applications")
+    void testMultiApplicationOnboarding() throws Exception {
+        OnboardRequest request = new OnboardRequest();
+        request.setName("Multi Access User");
+        request.setEmployeeId("multi-access-01");
+        request.setDepartment("Engineering");
+        request.setRole("Developer");
+        request.setAccessRequests(List.of(
+                new compensation_engine.dto.AccessGrantRequest("GitLab", "Developer"),
+                new compensation_engine.dto.AccessGrantRequest("Jira", "User")
+        ));
+
+        mockMvc.perform(post("/api/workflow/onboard")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.steps", hasSize(6)));
+
+        mockMvc.perform(get("/api/workflow/state"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applicationAccess", hasSize(2)));
     }
 
     @Test
