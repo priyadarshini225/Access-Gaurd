@@ -1,0 +1,9 @@
+.vscode/
+.maven/
+.idea/
+target/
+**/target/
+data/
+**/data/
+*.log
+
